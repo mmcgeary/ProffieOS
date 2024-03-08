@@ -309,11 +309,15 @@ public:
     SaberBase::DoOff(off_type, location);
   }
 
+  static void OverrideMotionSleepRequested(bool override) {
+	  motion_sleep_override_ = override;
+  }
+
   static bool MotionRequested() {
 #if NUM_BUTTONS == 0
     return true;
 #else
-    return IsOn() || (millis() - last_motion_request_) < 20000;
+    return IsOn() || (((millis() - last_motion_request_) < 20000) && motion_sleep_override_ == false);
 #endif
   }
   static void RequestMotion() {
@@ -604,7 +608,7 @@ private:
     num_effects_ = std::min(num_effects_ + 1, NELEM(effects_));
   }
 
-  
+  static bool motion_sleep_override_;
   static size_t num_effects_;
   static BladeEffect effects_[10];
   static BladeSet on_;
@@ -614,6 +618,7 @@ private:
   SaberBase* next_saber_;
 };
 
+bool SaberBase::motion_sleep_override_ = false;
 size_t SaberBase::num_effects_ = 0;
 BladeEffect SaberBase::effects_[10];
 EffectLocation SaberBase::location;
