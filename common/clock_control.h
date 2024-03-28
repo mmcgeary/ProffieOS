@@ -8,51 +8,21 @@
 class ClockControl : public Looper {
 public:
   const char* name() override { return "ClockControl"; }
-  void Loop() override {
-    bool on = false;
-    SaberBase::DoIsOn(&on);
-	
-    if (SaberBase::IsOn()
-	|| Serial
-	|| prop.NeedsPower()
-	|| USBD_Connected()
-	|| (stm32l4_gpio_pin_read(GPIO_PIN_PB2) && on == false)
-#ifdef ENABLE_AUDIO
-	|| amplifier.Active()
-#endif
-      ) {
-      last_activity_ = millis();
-    }
-    // These two variables must be read in order.
-    uint32_t last_activity = last_activity_;
-    uint32_t now = millis();
-
-	// Allow motion override to take place prior to sleep activation
-	if(now - last_activity > 28000) {
-		SaberBase::OverrideMotionSleepRequested(true);	
-	} else {
-		SaberBase::OverrideMotionSleepRequested(false);
-	}
-
-    if (now - last_activity > 30000) {
-      uint32_t pclk1 = stm32l4_system_pclk1();
-      uint32_t pclk2 = stm32l4_system_pclk2();
-#if 0 // #ifdef PROFFIEBOARD_VERSION
-      // This saves power, but also casuses freezing.
-      // TODO: FIgure out why and re-enable.
-      stm32l4_system_sysclk_configure(1000000, 500000, 500000);
-#else
-
-// Clock transition no longer necessary
-//      stm32l4_system_sysclk_configure(16000000, 8000000, 8000000);
-
+  void DeepSleep() {
+	  
+	  /*
+	   * Deep sleep support:
+	   * Proffie v1 drops to ~450 micro-amps
+	   * Proffie v2 drops to ~20 micro-amps
+	   * Proffie v3 drops to ~90 micro-amps
+	   */
+	  	  
 	  // Briefly enable booster to allow it to properly enter shutdown mode
 	  EnableBooster();
 	  delay(500);
 
-	  // TODO: Add Proffie V1 pins (if different than V2)
-#if PROFFIEBOARD_VERSION==2
-	  // Update GPIO pin states (needs to be streamlined at some point, not all necessary)
+#if PROFFIEBOARD_VERSION < 3
+	  // Update GPIO pin states for Proffie V1/2 (needs to be streamlined at some point, not all necessary)
 	  stm32l4_gpio_pin_configure(GPIO_PIN_PA0, GPIO_MODE_ANALOG);
 	  stm32l4_gpio_pin_configure(GPIO_PIN_PA1, GPIO_MODE_ANALOG);
 	  stm32l4_gpio_pin_configure(GPIO_PIN_PA2, GPIO_MODE_ANALOG);
@@ -88,12 +58,64 @@ public:
 //	  stm32l4_gpio_pin_configure(GPIO_PIN_PH1, GPIO_MODE_ANALOG); // Amp
 #endif
 #if PROFFIEBOARD_VERSION==3
-	  // TODO: Add Proffie 3 pins
+	  // Update GPIO pin states for Proffie V3 (needs to be streamlined at some point, not all necessary)
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA0, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA1, GPIO_MODE_ANALOG);
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PA2, GPIO_MODE_ANALOG); // Button 2
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA3, GPIO_MODE_ANALOG); // SD-power
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA4, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA5, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA6, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA7, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA8, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA9, GPIO_MODE_ANALOG); // SCL
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA10, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA11, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA12, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA13, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA14, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PA15, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB0, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB1, GPIO_MODE_ANALOG);
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PB2, GPIO_MODE_ANALOG); // VBUS
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB3, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB4, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB5, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB6, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB7, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB8, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB9, GPIO_MODE_ANALOG); // SDA
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB10, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB11, GPIO_MODE_ANALOG);
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PB12, GPIO_MODE_ANALOG);
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PB13, GPIO_MODE_ANALOG); // Button 1
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PB14, GPIO_MODE_ANALOG); // Button 2
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PB15, GPIO_MODE_ANALOG); // Button 3
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC0, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC1, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC2, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC3, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC4, GPIO_MODE_ANALOG); 
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PC5, GPIO_MODE_ANALOG); // Button 1
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC6, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC7, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC8, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC9, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC10, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC11, GPIO_MODE_ANALOG); 
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC12, GPIO_MODE_ANALOG); 	  
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PC13, GPIO_MODE_ANALOG); // Int
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PD2, GPIO_MODE_ANALOG); 
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PH0, GPIO_MODE_ANALOG); // Boost
+//	  stm32l4_gpio_pin_configure(GPIO_PIN_PH1, GPIO_MODE_ANALOG); // Amp	  
+	  stm32l4_gpio_pin_configure(GPIO_PIN_PH3, GPIO_MODE_ANALOG);
 #endif
 
+#ifdef DEEP_SLEEP_BEEP_ENTER
 	  // Play beep indicating that low power sleep was entered
 	  beeper.Beep(0.7, 500);
 	  delay(1000);
+#endif
 
 	  // Make sure booster and amplifier pins are LOW before sleep to activate shutdown modes
 	  digitalWrite(boosterPin, LOW);
@@ -122,8 +144,25 @@ public:
 
 		  // Check for wake-up conditions each time through loop
 		  if(USBD_Connected()
-		  || stm32l4_gpio_pin_read(GPIO_PIN_PB5) == 0 // Button 1
-		  || stm32l4_gpio_pin_read(GPIO_PIN_PB6) == 0 // Button 2
+#if PROFFIEBOARD_VERSION==3	  
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB14) == 0 // Button 1 on proffie v3
+#if NUM_BUTTONS > 1		  
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB13) == 0 // Button 2 on proffie v3
+#endif
+#if NUM_BUTTONS > 2	  
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB15) == 0 // Button 3 on proffie v3
+#endif
+#endif
+
+#if PROFFIEBOARD_VERSION < 3
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB6) == 0 // Button 1 on proffie v1/2
+#if NUM_BUTTONS > 1
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB5) == 0 // Button 2 on proffie v1/2
+#endif
+#if NUM_BUTTONS > 1
+		  || stm32l4_gpio_pin_read(GPIO_PIN_PB4) == 0 // Button 3 on proffie v1/2
+#endif
+#endif
 		  || stm32l4_gpio_pin_read(GPIO_PIN_PB2) == 1 // VBUS
 		  ) {
 			
@@ -140,12 +179,39 @@ public:
 			  }
 			
 			  // Reset processor instead of attempting to resume where left off
-			  // TODO: Could be augmented to allow seamless wake-up someday
+			  // TODO: Could be augmented to allow seamless wake-up someday since SRAM is still active in STOP2
 			  STM32.reset();
 			  break;
 		  }
 	  }
-
+  }
+  void Loop() override {
+    bool on = false;
+    SaberBase::DoIsOn(&on);
+	
+    if (on
+	|| Serial
+	|| prop.NeedsPower()
+	|| USBD_Connected()
+	|| stm32l4_gpio_pin_read(GPIO_PIN_PB2)
+#ifdef ENABLE_AUDIO
+	|| amplifier.Active()
+#endif
+      ) {		  
+      last_activity_ = millis();
+    }
+    // These two variables must be read in order.
+    uint32_t last_activity = last_activity_;
+    uint32_t now = millis();
+    if (now - last_activity > 30000) {
+      uint32_t pclk1 = stm32l4_system_pclk1();
+      uint32_t pclk2 = stm32l4_system_pclk2();
+#if 0 // #ifdef PROFFIEBOARD_VERSION
+      // This saves power, but also casuses freezing.
+      // TODO: FIgure out why and re-enable.
+      stm32l4_system_sysclk_configure(1000000, 500000, 500000);
+#else
+      stm32l4_system_sysclk_configure(16000000, 8000000, 8000000);
 #endif
 #ifdef COMMON_I2CBUS_H
       // Motion and other things might still be going on.
@@ -156,11 +222,35 @@ public:
         delay(50);
       stm32l4_system_sysclk_configure(_SYSTEM_CORE_CLOCK_, pclk1, pclk2);
     }
+	
+#ifdef DEEP_SLEEP_TIMEOUT	
+#if VERSION_MAJOR >= 4 // Only support Proffie v1 and above
+#if NUM_BUTTONS > 0 // Only allow deep sleep if at least 1 button is loaded
+
+	// Allow motion override to take place prior to deep sleep activation to ensure motion chip is put to sleep first
+	if(now - last_activity > (DEEP_SLEEP_TIMEOUT - 2000)) {
+		SaberBase::OverrideMotionSleepRequested(true);	
+	} else {
+		SaberBase::OverrideMotionSleepRequested(false);
+	}
+		
+	// Check for deep sleep entry
+	if(now - last_activity > DEEP_SLEEP_TIMEOUT) {
+
+		// Enter deep sleep (will not exit without restart)
+		DeepSleep();	
+	}	
+#endif
+#endif	
+#endif	
   }
 
-  // Do nothing now, override font request
-  void AvoidSleep() { }
-    
+#ifdef DEEP_SLEEP_OVERRIDE_FONT_KEEPAWAKE
+  void AvoidSleep() {  }  // Do nothing now, override font request
+#else  
+  void AvoidSleep() { last_activity_ = millis(); }
+#endif    
+	
   private:
     volatile uint32_t last_activity_;
 };
