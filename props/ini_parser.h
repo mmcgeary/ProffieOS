@@ -43,7 +43,7 @@ public:
 
     while (true) {
       reader_.skipwhite();
-      int c = reader_.peek();
+      int c = reader_.Peek();
 
       if (c == -1) return INI_EOF;
 
@@ -104,7 +104,7 @@ private:
   bool ReadKeyValue() {
     int i = 0;
     while (i < INI_MAX_KEY_LEN - 1) {
-      int c = reader_.peek();
+      int c = reader_.Peek();
       if (c == -1 || c == '\n') { reader_.skipline(); return false; }
       if (c == '=' || c == ' ' || c == '\t') break;
       if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
@@ -120,7 +120,7 @@ private:
     current_key_[i] = 0;
 
     reader_.skipspace();
-    if (reader_.peek() != '=') { reader_.skipline(); return false; }
+    if (reader_.Peek() != '=') { reader_.skipline(); return false; }
     reader_.Read();
     reader_.skipspace();
 

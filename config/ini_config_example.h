@@ -10,6 +10,7 @@
 #define NUM_BLADES 1
 #define NUM_BUTTONS 2
 #define VOLUME 2000
+#define CLASH_THRESHOLD_G 8.0
 const unsigned int maxLedsPerStrip = 144;
 
 #define ENABLE_AUDIO
