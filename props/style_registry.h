@@ -16,138 +16,85 @@ struct IniStyleEntry {
   StyleBuildFn build;
 };
 
-// Helper: write common effect args shared by ALL main blade styles
-static int WriteCommonEffectArgs(const IniPreset* p, char* buf, int buf_size) {
-  return snprintf(buf, buf_size, " %s %s %s %s %s %s",
-    p->blast_color, p->clash_color, p->lockup_color,
-    p->drag_color, p->lb_color, p->stab_color);
-}
-
-// Helper: write timing args
-static int WriteTimingArgs(const IniPreset* p, char* buf, int buf_size) {
-  return snprintf(buf, buf_size, " %u %u", p->ignition_time, p->retraction_time);
-}
-
 // --- Main Blade Style Build Functions ---
 
 static int BuildStandard(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "standard %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // style_parser: standard <base_color> <clash_color> <ignition_ms> <retraction_ms>
+  return snprintf(buf, buf_size, "standard %s %s %u %u",
+    p->base_color, p->clash_color, p->ignition_time, p->retraction_time);
 }
 
 static int BuildUnstable(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "unstable %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // style_parser: unstable <warm> <warmer> <hot> <sparks> <ignition_ms> <retraction_ms>
+  return snprintf(buf, buf_size, "unstable %s %s %s %s %u %u",
+    p->base_color, p->alt_color, p->blast_color, p->clash_color,
+    p->ignition_time, p->retraction_time);
 }
 
 static int BuildFire(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "fire %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // style_parser: fire <warm_color> <hot_color>
+  return snprintf(buf, buf_size, "fire %s %s", p->base_color, p->alt_color);
 }
 
 static int BuildRainbow(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "rainbow %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // style_parser: rainbow <ignition_ms> <retraction_ms>
+  return snprintf(buf, buf_size, "rainbow %u %u", p->ignition_time, p->retraction_time);
 }
 
 static int BuildStrobe(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "strobe %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // style_parser: strobe <standby_color> <flash_color> <freq> <ms> <ignition_ms> <retraction_ms>
+  return snprintf(buf, buf_size, "strobe %s %s 15 1 %u %u",
+    p->base_color, p->alt_color, p->ignition_time, p->retraction_time);
 }
 
 static int BuildPulse(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "pulse %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildRotoscope(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "rotoscope %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildGhostly(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "ghostly %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildLightning(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "lightning %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "unstable"
+  return BuildUnstable(p, buf, buf_size);
 }
 
 static int BuildDarksaber(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "darksaber %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "unstable"
+  return BuildUnstable(p, buf, buf_size);
 }
 
 static int BuildKylo(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "kylo %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "unstable"
+  return BuildUnstable(p, buf, buf_size);
 }
 
 static int BuildPrequels(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "prequels %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildSequels(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "sequels %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildAncient(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "ancient %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 static int BuildStaticColor(const IniPreset* p, char* buf, int buf_size) {
-  int n = snprintf(buf, buf_size, "static %s %s %u",
-    p->base_color, p->alt_color, p->ignition_time);
-  n += WriteCommonEffectArgs(p, buf + n, buf_size - n);
-  n += snprintf(buf + n, buf_size - n, " %u", p->retraction_time);
-  return n;
+  // Alias to supported "standard"
+  return BuildStandard(p, buf, buf_size);
 }
 
 // --- Accent/Crystal Blade Styles ---
