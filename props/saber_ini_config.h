@@ -23,7 +23,7 @@
 
 #define INI_CONFIG_FILE "saber_config.ini"
 #define INI_BLADE_OUT_FILE "blade_out.ini"
-#define INI_BUILT_PRESETS_FILE "ini_presets.ini"
+#define INI_BUILT_PRESETS_FILE "presets.ini"
 
 #define INI_ALERT_MISSING "ini_missing.wav"
 #define INI_ALERT_ERROR "ini_error.wav"

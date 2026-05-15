@@ -39,6 +39,9 @@ public:
     }
 
     char style_buf[MAX_STYLE_STRING_LEN];
+    f.print("installed=");
+    f.print(install_time);
+    f.print("\n");
 
     for (int i = 0; i < config->num_presets; i++) {
       const IniPreset* p = &config->presets[i];
@@ -77,8 +80,8 @@ public:
       f.print("\n");
 
       f.print("variation=0\n");
-      f.print("end\n");
     }
+    f.print("end\n");
 
     f.close();
     LOCK_SD(false);
