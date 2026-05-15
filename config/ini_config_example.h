@@ -42,3 +42,13 @@ BladeConfig blades[] = {
 };
 
 #endif
+
+#ifdef CONFIG_BUTTONS
+Button PowerButton(BUTTON_POWER, powerButtonPin, "pow");
+#if NUM_BUTTONS >= 2
+Button AuxButton(BUTTON_AUX, auxPin, "aux");
+#endif
+#if NUM_BUTTONS >= 3
+Button Aux2Button(BUTTON_AUX2, aux2Pin, "aux2");
+#endif
+#endif
