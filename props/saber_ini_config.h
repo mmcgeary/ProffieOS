@@ -45,6 +45,15 @@ public:
     ApplyButtonProfile();
   }
 
+  void FindBlade(bool announce = false) {
+    PropBase::FindBlade(announce);
+    // Defer preset activation until blade config is initialized.
+    if (ini_loaded_) {
+      SetPreset(0, false);
+      PlayAlert(INI_ALERT_LOADED);
+    }
+  }
+
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
     // Handle gesture events (BUTTON_NONE with motion events)
     if (button == BUTTON_NONE) {
@@ -140,8 +149,6 @@ private:
     }
 
     ini_loaded_ = true;
-    SetPreset(0, true);
-    PlayAlert(INI_ALERT_LOADED);
   }
 
   void LoadBladeOutConfig() {
@@ -157,7 +164,9 @@ private:
       config_.num_presets = blade_out_config.num_presets;
       memcpy(config_.presets, blade_out_config.presets, sizeof(config_.presets));
       PresetBuilder::WritePresetsFile(&config_, INI_BUILT_PRESETS_FILE);
-      SetPreset(0, true);
+      if (current_config) {
+        SetPreset(0, true);
+      }
     }
   }
 
