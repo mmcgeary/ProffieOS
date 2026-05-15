@@ -32,7 +32,7 @@ public:
 
   static bool WritePresetsFile(const RuntimeConfig* config, const char* filename) {
     LOCK_SD(true);
-    File f = LSFS::Open(filename, FILE_WRITE | O_TRUNC);
+    File f = LSFS::OpenForWrite(filename);
     if (!f) {
       LOCK_SD(false);
       return false;

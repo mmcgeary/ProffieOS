@@ -43,6 +43,11 @@ public:
   }
 
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
+    // Handle gesture events (BUTTON_NONE with motion events)
+    if (button == BUTTON_NONE) {
+      return HandleGestureEvent(event, modifiers);
+    }
+
     // Handle button release — end sustained actions
     if (event == EVENT_RELEASED) {
       if (active_lockup_slot_ >= 0) {
@@ -74,47 +79,34 @@ public:
 
   void Loop() override {
     PropBase::Loop();
-    DetectGestures();
   }
 
   // Public methods called by ExecuteAction
   void ToggleColorChangeMode() {
     color_change_mode_ = !color_change_mode_;
-    if (color_change_mode_) {
-      SaberBase::DoEffect(EFFECT_USER1, 0);
-    }
   }
 
   void PlayQuote() {
-    SaberBase::DoEffect(EFFECT_QUOTE, 0);
+    // Trigger quote/force effect from current font
+    SaberBase::DoEffect(EFFECT_FORCE, 0);
   }
 
   void VolumeUp() {
     if (dynamic_mixer.get_volume() < VOLUME) {
-      dynamic_mixer.set_volume(dynamic_mixer.get_volume() + VOLUME / 10);
-      SaberBase::DoEffect(EFFECT_VOLUME_LEVEL, 0);
+      dynamic_mixer.set_volume(std::min<int>(VOLUME, dynamic_mixer.get_volume() + VOLUME / 10));
+      beeper.Beep(0.5, 2000);
     }
   }
 
   void VolumeDown() {
-    if (dynamic_mixer.get_volume() > VOLUME / 10) {
-      dynamic_mixer.set_volume(dynamic_mixer.get_volume() - VOLUME / 10);
-      SaberBase::DoEffect(EFFECT_VOLUME_LEVEL, 0);
+    if (dynamic_mixer.get_volume() > 0) {
+      dynamic_mixer.set_volume(std::max<int>(0, dynamic_mixer.get_volume() - VOLUME / 10));
+      beeper.Beep(0.5, 1000);
     }
   }
 
   void SayBatteryLevel() {
-    talkie.SayDigit((int)(battery_monitor.battery_percent()));
-  }
-
-  void StartOrStopTrack() {
-    if (track_player_) {
-      track_player_->Stop();
-      track_player_->CloseFiles();
-      track_player_ = nullptr;
-    } else {
-      StartTrackPlayer();
-    }
+    talkie.SayNumber((int)(battery_monitor.battery_percent()));
   }
 
 private:
@@ -188,41 +180,52 @@ private:
     dynamic_mixer.set_volume(vol);
   }
 
-  void DetectGestures() {
+  // Handle gesture events dispatched by prop_base motion detection
+  bool HandleGestureEvent(EVENT event, uint32_t modifiers) {
     if (!IsOn()) {
-      if ((config_.global.gesture_flags & GESTURE_TWIST_ON) && fusor.swing_speed() > 600 && IsGesture(GESTURE_TWIST)) {
-        On();
-        return;
-      }
-      if ((config_.global.gesture_flags & GESTURE_STAB_ON) && IsGesture(GESTURE_STAB)) {
-        On();
-        return;
-      }
-      if ((config_.global.gesture_flags & GESTURE_SWING_ON) && IsGesture(GESTURE_SWING)) {
-        On();
-        return;
-      }
-      if ((config_.global.gesture_flags & GESTURE_THRUST_ON) && IsGesture(GESTURE_THRUST)) {
-        On();
-        return;
+      // OFF gestures — activation
+      switch (event) {
+        case EVENT_TWIST:
+          if (config_.global.gesture_flags & GESTURE_TWIST_ON) { On(); return true; }
+          break;
+        case EVENT_STAB:
+          if (config_.global.gesture_flags & GESTURE_STAB_ON) { On(); return true; }
+          break;
+        case EVENT_SWING:
+          if (config_.global.gesture_flags & GESTURE_SWING_ON) { On(); return true; }
+          break;
+        case EVENT_THRUST:
+          if (config_.global.gesture_flags & GESTURE_THRUST_ON) { On(); return true; }
+          break;
+        default:
+          break;
       }
     } else {
-      if ((config_.global.gesture_flags & GESTURE_TWIST_OFF) && IsGesture(GESTURE_TWIST)) {
-        Off();
-        return;
-      }
-      if ((config_.global.gesture_flags & GESTURE_FORCE_PUSH) && IsGesture(GESTURE_PUSH)) {
-        SaberBase::DoForce();
-        return;
-      }
-      if ((config_.global.gesture_flags & GESTURE_MELT) && IsGesture(GESTURE_STAB)) {
-        if (SaberBase::Lockup() == SaberBase::LOCKUP_NONE) {
-          SaberBase::SetLockup(SaberBase::LOCKUP_MELT);
-          SaberBase::DoBeginLockup();
-        }
-        return;
+      // ON gestures — deactivation and effects
+      switch (event) {
+        case EVENT_TWIST:
+          if (config_.global.gesture_flags & GESTURE_TWIST_OFF) { Off(); return true; }
+          break;
+        case EVENT_PUSH:
+          if (config_.global.gesture_flags & GESTURE_FORCE_PUSH) {
+            SaberBase::DoForce();
+            return true;
+          }
+          break;
+        case EVENT_STAB:
+          if (config_.global.gesture_flags & GESTURE_MELT) {
+            if (SaberBase::Lockup() == SaberBase::LOCKUP_NONE) {
+              SaberBase::SetLockup(SaberBase::LOCKUP_MELT);
+              SaberBase::DoBeginLockup();
+            }
+            return true;
+          }
+          break;
+        default:
+          break;
       }
     }
+    return false;
   }
 
   void EndLockup() {
@@ -234,29 +237,9 @@ private:
 
   void PlayAlert(const char* filename) {
     if (LSFS::Exists(filename)) {
-      SaberBase::DoEffect(EFFECT_USER1, 0);
+      beeper.Beep(0.5, 2000);
     }
   }
-
-  // Gesture detection helper — checks fusor state
-  bool IsGesture(uint32_t gesture) {
-    // Delegate to motion subsystem
-    // The exact API depends on ProffieOS version; this wraps the check
-    return fusor.IsGesture(gesture);
-  }
-
-  void StartTrackPlayer() {
-    // Uses existing track player infrastructure
-    if (current_preset_.track.get()) {
-      MountSDCard();
-      track_player_ = GetFreeWavPlayer();
-      if (track_player_) {
-        track_player_->Play(current_preset_.track.get());
-      }
-    }
-  }
-
-  RefPtr<BufferedWavPlayer> track_player_;
 };
 
 #endif // PROPS_SABER_INI_CONFIG_H
