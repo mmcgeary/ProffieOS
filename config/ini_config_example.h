@@ -5,12 +5,12 @@
 // configured via saber_config.ini on the SD card.
 
 #ifdef CONFIG_TOP
-#include "proffieboard_v3_config.h"
+#include "proffieboard_config.h"
 
 #define NUM_BLADES 1
 #define NUM_BUTTONS 2
-#define VOLUME 2000
-#define CLASH_THRESHOLD_G 8.0
+#define VOLUME 100
+#define CLASH_THRESHOLD_G 4.0
 const unsigned int maxLedsPerStrip = 144;
 
 #define ENABLE_AUDIO
@@ -30,7 +30,7 @@ const unsigned int maxLedsPerStrip = 144;
 
 // Minimal preset — INI prop overrides at boot.
 Preset presets[] = {
-  { "font1", "tracks/track1.wav",
+  { "Kestis", "tracks/track1.wav",
     StylePtr<Blue>(),
     "INI Config"
   },

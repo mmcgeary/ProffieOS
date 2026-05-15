@@ -40,6 +40,9 @@ public:
   void Setup() override {
     PropBase::Setup();
     LoadIniConfig();
+    // Always ensure button defaults are populated for any unset slots.
+    // This runs after INI load so INI overrides take precedence.
+    ApplyButtonProfile();
   }
 
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
@@ -128,7 +131,6 @@ private:
       return;
     }
 
-    ApplyButtonProfile();
     ApplyGlobalConfig();
 
     if (!PresetBuilder::WritePresetsFile(&config_, INI_BUILT_PRESETS_FILE)) {
@@ -241,5 +243,8 @@ private:
     }
   }
 };
+
+#undef PROP_TYPE
+#define PROP_TYPE SaberIniConfig
 
 #endif // PROPS_SABER_INI_CONFIG_H
