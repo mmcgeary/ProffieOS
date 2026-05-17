@@ -4,6 +4,7 @@
 #include "../common/preset.h"
 #include "../common/arg_parser.h"
 #include "../functions/int_arg.h"
+#include "ini_style_templates.h"
 
 class NamedStyle {
 public:
@@ -98,6 +99,51 @@ NamedStyle named_styles[] = {
     "Rainbow blade, extension time, retraction time"
   },
   { "charging", &style_charging, "Charging style" },
+  { "ini_standard", IniStyleAllocatorPtr<IniBaseStandard>(),
+    "INI template style, standard base"
+  },
+  { "ini_humpflicker", IniStyleAllocatorPtr<IniBaseHumpFlicker>(),
+    "INI template style, hump-flicker base"
+  },
+  { "ini_unstable", IniStyleAllocatorPtr<IniBaseUnstable>(),
+    "INI template style, unstable base"
+  },
+  { "ini_fire", IniStyleAllocatorPtr<IniBaseFire>(),
+    "INI template style, fire base"
+  },
+  { "ini_rainbow", IniStyleAllocatorPtr<IniBaseRainbow>(),
+    "INI template style, rainbow base"
+  },
+  { "ini_strobe", IniStyleAllocatorPtr<IniBaseStrobe>(),
+    "INI template style, strobe base"
+  },
+  { "ini_pulse", IniStyleAllocatorPtr<IniBasePulse>(),
+    "INI template style, pulse base"
+  },
+  { "ini_rotoscope", IniStyleAllocatorPtr<IniBaseRotoscope>(),
+    "INI template style, rotoscope base"
+  },
+  { "ini_ghostly", IniStyleAllocatorPtr<IniBaseGhostly>(),
+    "INI template style, ghostly base"
+  },
+  { "ini_lightning", IniStyleAllocatorPtr<IniBaseLightning>(),
+    "INI template style, lightning base"
+  },
+  { "ini_darksaber", IniStyleAllocatorPtr<IniBaseDarksaber>(),
+    "INI template style, darksaber base"
+  },
+  { "ini_kylo", IniStyleAllocatorPtr<IniBaseKylo>(),
+    "INI template style, kylo base"
+  },
+  { "ini_prequels", IniStyleAllocatorPtr<IniBasePrequels>(),
+    "INI template style, prequels base"
+  },
+  { "ini_sequels", IniStyleAllocatorPtr<IniBaseSequels>(),
+    "INI template style, sequels base"
+  },
+  { "ini_ancient", IniStyleAllocatorPtr<IniBaseAncient>(),
+    "INI template style, ancient base"
+  },
 #endif
   { "builtin", &builtin_preset_allocator,
     // TODO: Support multiple argument templates.
