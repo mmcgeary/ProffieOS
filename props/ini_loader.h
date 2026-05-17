@@ -143,37 +143,38 @@ private:
     } else if (strcasecmp(key, "accent_speed") == 0) {
       p->accent_speed = constrain(atoi(val), 100, 10000);
     } else if (strcasecmp(key, "flicker_depth") == 0) {
-      p->flicker_depth = constrain(atoi(val), 0, 65535);
+      p->flicker_depth = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "flicker_speed") == 0) {
       p->flicker_speed = constrain(atoi(val), 1, 20000);
     } else if (strcasecmp(key, "stripe_width") == 0) {
-      p->stripe_width = constrain(atoi(val), 0, 65535);
+      p->stripe_width = constrain(atoi(val), 1, 65535);
     } else if (strcasecmp(key, "stripe_speed") == 0) {
       p->stripe_speed = constrain(atoi(val), 0, 20000);
     } else if (strcasecmp(key, "motion_gain") == 0) {
-      p->motion_gain = constrain(atoi(val), 0, 65535);
+      p->motion_gain = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "noise_mix") == 0) {
-      p->noise_mix = constrain(atoi(val), 0, 65535);
-    } else if (strcasecmp(key, "core_contrast") == 0) {
-      p->core_contrast = constrain(atoi(val), 0, 65535);
+      p->noise_mix = constrain(atoi(val), 0, 32768);
+    } else if (strcasecmp(key, "base_contrast") == 0 ||
+               strcasecmp(key, "core_contrast") == 0) {
+      p->base_contrast = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "pulse_rate") == 0) {
       p->pulse_rate = constrain(atoi(val), 1, 20000);
     } else if (strcasecmp(key, "pulse_depth") == 0) {
-      p->pulse_depth = constrain(atoi(val), 0, 65535);
+      p->pulse_depth = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "strobe_freq") == 0) {
       p->strobe_freq = constrain(atoi(val), 1, 200);
     } else if (strcasecmp(key, "strobe_ms") == 0) {
       p->strobe_ms = constrain(atoi(val), 1, 1000);
     } else if (strcasecmp(key, "drift_rate") == 0) {
-      p->drift_rate = constrain(atoi(val), 0, 20000);
+      p->drift_rate = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "warm_shift") == 0) {
-      p->warm_shift = constrain(atoi(val), 0, 65535);
+      p->warm_shift = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "jitter_amount") == 0) {
-      p->jitter_amount = constrain(atoi(val), 0, 65535);
+      p->jitter_amount = constrain(atoi(val), 1, 200);
     } else if (strcasecmp(key, "spark_mix") == 0) {
-      p->spark_mix = constrain(atoi(val), 0, 65535);
+      p->spark_mix = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "heat_rand") == 0) {
-      p->heat_rand = constrain(atoi(val), 0, 65535);
+      p->heat_rand = constrain(atoi(val), 0, 32768);
     } else if (strcasecmp(key, "fire_cooling") == 0) {
       p->fire_cooling = constrain(atoi(val), 0, 255);
     } else if (strcasecmp(key, "rainbow_speed") == 0) {

@@ -3,17 +3,67 @@ name: C/C++ CI
 on: [push]
 
 jobs:
-  build:
-
+  posix-tests:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v1
-    - name: test styles
-      run: cd styles && make test
-    - name: test common
-      run: cd common && make test
-    - name: test blades
-      run: cd blades && make test
-    - name: test sound
-      run: cd sound && make test
+      - uses: actions/checkout@v4
+      - name: test styles
+        run: cd styles && make test
+      - name: test common
+        run: cd common && make test
+      - name: test blades
+        run: cd blades && make test
+      - name: test sound
+        run: cd sound && make test
+      - name: test buttons
+        run: cd buttons && make test
+      - name: test display
+        run: cd display && make test
+      - name: test props
+        run: cd props && make test
+
+  firmware-size-gate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fqbn:
+          - proffieboard:stm32l4:ProffieboardV2-L433CC:usb=cdc,dosfs=sdspi,speed=80,opt=os
+          - proffieboard:stm32l4:ProffieboardV3-L452RE:usb=cdc,dosfs=sdmmc1,speed=80,opt=os
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: install Proffieboard core
+        run: |
+          arduino-cli core update-index \
+            --additional-urls https://profezzorn.github.io/arduino/package_proffieboard_index.json
+          arduino-cli core install proffieboard:stm32l4 \
+            --additional-urls https://profezzorn.github.io/arduino/package_proffieboard_index.json
+      - name: enforce size-optimized compile policy
+        run: |
+          case "${{ matrix.fqbn }}" in
+            *opt=os*) ;;
+            *)
+              echo "FQBN must use opt=os: ${{ matrix.fqbn }}"
+              exit 1
+              ;;
+          esac
+      - name: compile and check flash budget
+        run: |
+          set -euo pipefail
+          OUT=$(arduino-cli compile --fqbn "${{ matrix.fqbn }}" ProffieOS.ino 2>&1 | tee /tmp/compile.log)
+          if echo "$OUT" | grep -q "overflowed by"; then
+            echo "Flash overflow detected for ${{ matrix.fqbn }}"
+            exit 1
+          fi
+          USED=$(echo "$OUT" | sed -n 's/.*Sketch uses \([0-9][0-9]*\) bytes.*/\1/p' | tail -n 1)
+          MAX=$(echo "$OUT" | sed -n 's/.*Maximum is \([0-9][0-9]*\) bytes.*/\1/p' | tail -n 1)
+          if [ -z "$USED" ] || [ -z "$MAX" ]; then
+            echo "Failed to parse flash usage from compile output."
+            exit 1
+          fi
+          if [ "$USED" -gt "$MAX" ]; then
+            echo "Flash usage exceeds board limit: $USED > $MAX"
+            exit 1
+          fi
+          echo "Flash usage OK for ${{ matrix.fqbn }}: $USED / $MAX bytes"

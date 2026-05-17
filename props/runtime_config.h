@@ -121,7 +121,7 @@ struct IniPreset {
   uint16_t stripe_speed;
   uint16_t motion_gain;
   uint16_t noise_mix;
-  uint16_t core_contrast;
+  uint16_t base_contrast;
   uint16_t pulse_rate;
   uint16_t pulse_depth;
   uint16_t strobe_freq;
@@ -168,14 +168,14 @@ struct IniPreset {
     stripe_speed = 900;
     motion_gain = 4096;
     noise_mix = 8000;
-    core_contrast = 32768;
+    base_contrast = 32768;
     pulse_rate = 1200;
     pulse_depth = 9000;
     strobe_freq = 15;
     strobe_ms = 1;
     drift_rate = 600;
     warm_shift = 2000;
-    jitter_amount = 1200;
+    jitter_amount = 50;
     spark_mix = 5000;
     heat_rand = 4500;
     fire_cooling = 55;
