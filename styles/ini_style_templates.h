@@ -2,6 +2,7 @@
 #define STYLES_INI_STYLE_TEMPLATES_H
 
 #include "../functions/int_arg.h"
+#include "../functions/mult.h"
 #include "../transitions/fade.h"
 #include "../transitions/wipe.h"
 #include "audio_flicker.h"
@@ -72,7 +73,12 @@ using IniBaseUnstable =
 using IniBaseFire = StaticFire<RgbArg<1, RED>, RgbArg<2, YELLOW>, 0, 2, 0, 1800, 6>;
 using IniBaseRainbow = Rainbow;
 using IniBaseStrobe = StrobeX<RgbArg<1, BLACK>, RgbArg<2, WHITE>, IntArg<3, 15>, IntArg<4, 1>>;
-using IniBasePulse = PulsingX<RgbArg<1, CYAN>, RgbArg<2, WHITE>, IntArg<3, 1400>>;
+using IniBasePulse =
+    Layers<
+        RgbArg<1, CYAN>,
+        AlphaL<
+            RgbArg<2, WHITE>,
+            Mult<PulsingF<IntArg<3, 1400>>, Mult<IntArg<4, 9000>, Int<16384>>>>>;
 using IniBaseRotoscope =
     HumpFlicker<
         RgbArg<1, Rgb<200, 200, 255>>,
