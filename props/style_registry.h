@@ -2,10 +2,11 @@
 #ifndef PROPS_STYLE_REGISTRY_H
 #define PROPS_STYLE_REGISTRY_H
 
+#include "ini_tuning_arg_table.h"
 #include "runtime_config.h"
 #include <stdarg.h>
 
-#define MAX_STYLE_STRING_LEN 384
+#define MAX_STYLE_STRING_LEN 640
 
 struct IniPreset;
 
@@ -36,21 +37,70 @@ static int BuildStyleString(char* buf, int buf_size, const char* format, ...) {
   return written;
 }
 
+struct IniTuningArgDef {
+  int arg_id;
+  uint16_t IniPreset::* member;
+};
+
+#define INI_TUNING_ARG_DEF(field, arg_id, key, default_value) \
+  { ini_style_args::arg_id, &IniPreset::field },
+static constexpr IniTuningArgDef kIniTuningArgDefs[] = {
+  INI_TUNING_ARG_TABLE(INI_TUNING_ARG_DEF)
+};
+#undef INI_TUNING_ARG_DEF
+
+static_assert(kIniTuningArgDefs[0].arg_id == ini_style_args::kFlickerDepthArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[1].arg_id == ini_style_args::kFlickerSpeedArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[2].arg_id == ini_style_args::kStripeWidthArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[3].arg_id == ini_style_args::kStripeSpeedArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[4].arg_id == ini_style_args::kMotionGainArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[5].arg_id == ini_style_args::kNoiseMixArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[6].arg_id == ini_style_args::kBaseContrastArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[7].arg_id == ini_style_args::kDriftRateArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[8].arg_id == ini_style_args::kWarmShiftArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[9].arg_id == ini_style_args::kJitterAmountArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[10].arg_id == ini_style_args::kSparkMixArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[11].arg_id == ini_style_args::kHeatRandArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[12].arg_id == ini_style_args::kFireCoolingArg, "Arg order mismatch.");
+static_assert(kIniTuningArgDefs[13].arg_id == ini_style_args::kRainbowSpeedArg, "Arg order mismatch.");
+static_assert(
+    sizeof(kIniTuningArgDefs) / sizeof(kIniTuningArgDefs[0]) == ini_style_args::kTuningArgCount,
+    "Unexpected tuning arg count.");
+static_assert(
+    ini_style_args::kOffRateMsArg + 1 == ini_style_args::kFirstTuningArg,
+    "Expected tuning args to start immediately after off-rate argument.");
+
+static int AppendIniTuningArgs(char* buf, int buf_size, int written, const IniPreset* p) {
+  if (written < 0 || written >= buf_size) return -1;
+  const int count = sizeof(kIniTuningArgDefs) / sizeof(kIniTuningArgDefs[0]);
+  for (int i = 0; i < count; i++) {
+    const unsigned int value = static_cast<unsigned int>(p->*(kIniTuningArgDefs[i].member));
+    const int appended = snprintf(buf + written, buf_size - written, " %u", value);
+    if (appended < 0 || appended >= buf_size - written) {
+      buf[buf_size - 1] = '\0';
+      return -1;
+    }
+    written += appended;
+  }
+  return written;
+}
+
 static int BuildIniStyleWithStringArgs(const char* parser_name,
                                        const IniPreset* p,
                                        char* buf,
                                        int buf_size,
                                        const char* arg1,
-                                       const char* arg2,
-                                       const char* arg3,
-                                       const char* arg4) {
-  return BuildStyleString(buf, buf_size, "%s %s %s %s %s %s %s %s %s %s %s %s %u %u %s %u %u",
+                                        const char* arg2,
+                                        const char* arg3,
+                                        const char* arg4) {
+  const int written = BuildStyleString(buf, buf_size, "%s %s %s %s %s %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
     BuildOffModeSelector(p), p->off_rate_ms);
+  return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
 static int BuildIniStyleWithNumericArg34(const char* parser_name,
@@ -61,13 +111,14 @@ static int BuildIniStyleWithNumericArg34(const char* parser_name,
                                           const char* arg2,
                                           unsigned int arg3,
                                           unsigned int arg4) {
-  return BuildStyleString(buf, buf_size, "%s %s %s %u %u %s %s %s %s %s %s %s %u %u %s %u %u",
+  const int written = BuildStyleString(buf, buf_size, "%s %s %s %u %u %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
     BuildOffModeSelector(p), p->off_rate_ms);
+  return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
 static int BuildIniStyleWithStringArg3NumericArg4(const char* parser_name,
@@ -75,16 +126,17 @@ static int BuildIniStyleWithStringArg3NumericArg4(const char* parser_name,
                                                   char* buf,
                                                    int buf_size,
                                                    const char* arg1,
-                                                   const char* arg2,
-                                                   const char* arg3,
-                                                   unsigned int arg4) {
-  return BuildStyleString(buf, buf_size, "%s %s %s %s %u %s %s %s %s %s %s %s %u %u %s %u %u",
+                                                    const char* arg2,
+                                                     const char* arg3,
+                                                     unsigned int arg4) {
+  const int written = BuildStyleString(buf, buf_size, "%s %s %s %s %u %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
     BuildOffModeSelector(p), p->off_rate_ms);
+  return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
 // --- Main Blade Style Build Functions ---
@@ -200,7 +252,7 @@ const IniStyleEntry ini_style_registry[] = {
   {"rotoscope",   "Original trilogy look",         BuildRotoscope},
   {"ghostly",     "Transparent ethereal blade",    BuildGhostly},
   {"lightning",   "Lightning animated blade",      BuildLightning},
-  {"darksaber",   "Darksaber white-core style",    BuildDarksaber},
+  {"darksaber",   "Darksaber high-contrast style", BuildDarksaber},
   {"kylo",        "Crossguard unstable variant",   BuildKylo},
   {"prequels",    "Prequel-era smooth blade",      BuildPrequels},
   {"sequels",     "Sequel-era slight flicker",     BuildSequels},

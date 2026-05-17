@@ -44,6 +44,9 @@ buttons-test:
 display-test:
 	(cd display && $(MAKE) test)
 
+props-test:
+	(cd props && $(MAKE) test)
+
 subtest:
 	rm -r test-$(TESTSUBDIR) || :
 	mkdir test-$(TESTSUBDIR)
@@ -106,7 +109,7 @@ testD:
 	$(MAKE) subtest CONFIG_FILE=config/teensy_audio_shield_micom.h FQBN=$(TEENSY41_FQBN) TESTSUBDIR=teensy41-micom
 
 
-posixtests: style-test common-test blades-test sound-test buttons-test display-test
+posixtests: style-test common-test blades-test sound-test buttons-test display-test props-test
 
 test: posixtests test1 test2 test3 test4 test5 test6 test7 test8 test9 testA testB testC test1V test2V test3V testV3V testD
 	@echo Tests pass
