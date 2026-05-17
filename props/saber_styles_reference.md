@@ -7,6 +7,7 @@ Use these names in the `style` field of your preset sections in `saber_config.in
 | Style Name   | Description                              |
 |-------------|------------------------------------------|
 | standard    | Classic solid color blade                 |
+| humpflicker | Subtle hump flicker blade                 |
 | unstable    | Flickering/crackling unstable blade       |
 | fire        | Flame animated blade                      |
 | rainbow     | Cycling rainbow colors                    |
@@ -20,18 +21,25 @@ Use these names in the `style` field of your preset sections in `saber_config.in
 | prequels    | Prequel-era smooth blade                  |
 | sequels     | Sequel-era with slight flicker            |
 | ancient     | Ancient/Jedi temple style                 |
-| static      | Completely static blade (no flicker)      |
+
+## Preset Off-Mode Controls
+
+Each preset supports minimal off-state animation controls:
+
+- `off_mode = pulse|random`
+- `off_rate_ms = 10-60000`
 
 ## Accent/Crystal Styles
 
 For accent LEDs or crystal chambers, use `accent_style`:
 
-| Style Name | Description            |
-|-----------|------------------------|
-| pulse     | Slow pulsing glow      |
-| blink     | On/off blinking        |
-| random    | Random flickering      |
-| static    | Always on (no animation)|
+| Style Name  | Description             |
+|------------|-------------------------|
+| pulse      | Slow pulsing glow       |
+| blink      | On/off blinking         |
+| random     | Random flickering       |
+| static     | Always on (no animation)|
+| color_cycle| Cycles through colors   |
 
 Set `accent_speed` (100-10000 ms) to control animation timing.
 
