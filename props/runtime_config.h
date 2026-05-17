@@ -22,6 +22,9 @@
 #define GESTURE_FORCE_PUSH    (1 << 5)
 #define GESTURE_MELT          (1 << 6)
 
+#define OFF_MODE_PULSE  0
+#define OFF_MODE_RANDOM 1
+
 enum IniAction {
   ACTION_NONE = 0,
   ACTION_ON,
@@ -112,6 +115,28 @@ struct IniPreset {
   char accent_style[INI_MAX_STYLE_NAME_LEN];
   uint16_t accent_speed;
 
+  uint16_t flicker_depth;
+  uint16_t flicker_speed;
+  uint16_t stripe_width;
+  uint16_t stripe_speed;
+  uint16_t motion_gain;
+  uint16_t noise_mix;
+  uint16_t core_contrast;
+  uint16_t pulse_rate;
+  uint16_t pulse_depth;
+  uint16_t strobe_freq;
+  uint16_t strobe_ms;
+  uint16_t drift_rate;
+  uint16_t warm_shift;
+  uint16_t jitter_amount;
+  uint16_t spark_mix;
+  uint16_t heat_rand;
+  uint16_t fire_cooling;
+  uint16_t rainbow_speed;
+
+  uint8_t off_mode;
+  uint16_t off_rate_ms;
+
   void SetDefaults() {
     strcpy(font, "font1");
     track[0] = 0;
@@ -136,6 +161,28 @@ struct IniPreset {
 
     accent_style[0] = 0;
     accent_speed = 1000;
+
+    flicker_depth = 12000;
+    flicker_speed = 1000;
+    stripe_width = 5000;
+    stripe_speed = 900;
+    motion_gain = 4096;
+    noise_mix = 8000;
+    core_contrast = 32768;
+    pulse_rate = 1200;
+    pulse_depth = 9000;
+    strobe_freq = 15;
+    strobe_ms = 1;
+    drift_rate = 600;
+    warm_shift = 2000;
+    jitter_amount = 1200;
+    spark_mix = 5000;
+    heat_rand = 4500;
+    fire_cooling = 55;
+    rainbow_speed = 800;
+
+    off_mode = OFF_MODE_PULSE;
+    off_rate_ms = 1200;
   }
 };
 
