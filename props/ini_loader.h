@@ -5,6 +5,7 @@
 #include "ini_parser.h"
 #include "color_resolver.h"
 #include "runtime_config.h"
+#include "blade_bank_utils.h"
 
 class IniLoader {
 public:
@@ -67,11 +68,16 @@ public:
     }
 
     parser.Close();
+    FinalizeButtonMappings(config);
     config->loaded = true;
     return true;
   }
 
 private:
+  static void FinalizeButtonMappings(RuntimeConfig* config) {
+    ApplyButtonProfileDefaults(config);
+  }
+
   static void ParseGlobal(const char* key, const char* val, IniGlobalConfig* g) {
     if (strcasecmp(key, "volume") == 0) {
       g->volume = constrain(atoi(val), 0, 100);

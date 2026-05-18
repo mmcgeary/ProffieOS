@@ -3,6 +3,7 @@
 #define PROPS_BUTTON_PROFILES_H
 
 #include "runtime_config.h"
+#include <string.h>
 
 enum ButtonSlot {
   SLOT_PWR_CLICK = 0,
@@ -28,66 +29,95 @@ enum ButtonSlot {
   SLOT_AUX_AUX2_HOLD = 20,
   SLOT_AUX2_AUX_HOLD = 21,
   SLOT_ALL_HOLD = 22,
+  SLOT_PWR_HOLD_MEDIUM = 23,
+  SLOT_PWR_DOUBLE_HOLD = 24,
+  SLOT_PWR_TRIPLE_CLICK = 25,
+  SLOT_PWR_TRIPLE_HOLD = 26,
+  SLOT_AUX_DOUBLE_HOLD = 27,
+  SLOT_AUX_TRIPLE_CLICK = 28,
+  SLOT_AUX2_DOUBLE_HOLD = 29,
+  SLOT_PWR_MOD_CLASH = 30,
+  SLOT_PWR_MOD_STAB = 31,
+  SLOT_PWR_MOD_SWING = 32,
+  SLOT_PWR_MOD_TWIST = 33,
 };
 
-// Default profile — saber ON actions
-const IniAction default_profile_on[] = {
-  ACTION_OFF,              // 0: PWR click
-  ACTION_COLOR_CHANGE,     // 1: PWR long_click
-  ACTION_LOCKUP,           // 2: PWR hold
-  ACTION_MELT,             // 3: PWR hold_long
-  ACTION_FORCE,            // 4: PWR double_click
-  ACTION_BLAST,            // 5: AUX click
-  ACTION_NEXT_PRESET,      // 6: AUX long_click
-  ACTION_LIGHTNING_BLOCK,  // 7: AUX hold
-  ACTION_DRAG,             // 8: AUX hold_long
-  ACTION_QUOTE,            // 9: AUX double_click
-  ACTION_BATTERY_LEVEL,    // 10: PWR+AUX hold
-  ACTION_VOLUME_UP,        // 11: AUX+PWR hold
-  ACTION_TRACK_PLAYER,     // 12: PWR+AUX click
-  ACTION_STAB,             // 13: AUX2 click
-  ACTION_PREV_PRESET,      // 14: AUX2 long_click
-  ACTION_CLASH,            // 15: AUX2 hold
-  ACTION_NONE,             // 16: AUX2 hold_long
-  ACTION_NONE,             // 17: AUX2 double_click
-  ACTION_NONE,             // 18: PWR+AUX2 hold
-  ACTION_NONE,             // 19: AUX2+PWR hold
-  ACTION_VOLUME_DOWN,      // 20: AUX+AUX2 hold
-  ACTION_NONE,             // 21: AUX2+AUX hold
-  ACTION_NONE,             // 22: ALL hold
-};
+inline void ClearProfile(IniAction* map_on, IniAction* map_off) {
+  for (int i = 0; i < INI_MAX_SLOTS; i++) {
+    map_on[i] = ACTION_NONE;
+    map_off[i] = ACTION_NONE;
+  }
+}
 
-// Default profile — saber OFF actions
-const IniAction default_profile_off[] = {
-  ACTION_ON,               // 0: PWR click
-  ACTION_NEXT_PRESET,      // 1: PWR long_click
-  ACTION_NONE,             // 2: PWR hold
-  ACTION_NONE,             // 3: PWR hold_long
-  ACTION_PREV_PRESET,      // 4: PWR double_click
-  ACTION_NEXT_PRESET,      // 5: AUX click
-  ACTION_PREV_PRESET,      // 6: AUX long_click
-  ACTION_VOLUME_UP,        // 7: AUX hold
-  ACTION_VOLUME_DOWN,      // 8: AUX hold_long
-  ACTION_TRACK_PLAYER,     // 9: AUX double_click
-  ACTION_BATTERY_LEVEL,    // 10: PWR+AUX hold
-  ACTION_NONE,             // 11: AUX+PWR hold
-  ACTION_NONE,             // 12: PWR+AUX click
-  ACTION_BATTERY_LEVEL,    // 13: AUX2 click
-  ACTION_TRACK_PLAYER,     // 14: AUX2 long_click
-  ACTION_NONE,             // 15: AUX2 hold
-  ACTION_NONE,             // 16: AUX2 hold_long
-  ACTION_NONE,             // 17: AUX2 double_click
-  ACTION_NONE,             // 18: PWR+AUX2 hold
-  ACTION_NONE,             // 19: AUX2+PWR hold
-  ACTION_NONE,             // 20: AUX+AUX2 hold
-  ACTION_NONE,             // 21: AUX2+AUX hold
-  ACTION_NONE,             // 22: ALL hold
-};
+inline void LoadSa22cOneButtonProfile(IniAction* map_on, IniAction* map_off) {
+  map_off[SLOT_PWR_CLICK] = ACTION_ON_OR_VOLUME_UP;
+  map_off[SLOT_PWR_LONG_CLICK] = ACTION_NEXT_PRESET_OR_VOLUME_DOWN;
+  map_off[SLOT_PWR_HOLD_LONG] = ACTION_PREV_PRESET_IF_NOT_VOLUME_MENU;
+  map_off[SLOT_PWR_DOUBLE_CLICK] = ACTION_TRACK_PLAYER;
+  map_off[SLOT_PWR_DOUBLE_HOLD] = ACTION_ACTIVATE_MUTED;
+  map_off[SLOT_PWR_TRIPLE_CLICK] = ACTION_BATTERY_LEVEL;
+  map_off[SLOT_PWR_MOD_CLASH] = ACTION_TOGGLE_VOLUME_MENU;
 
-void LoadButtonProfile(const char* profile_name, IniAction* map_on, IniAction* map_off) {
-  (void)profile_name;  // reserved for future profiles ("fett263", "sa22c")
-  memcpy(map_on, default_profile_on, sizeof(default_profile_on));
-  memcpy(map_off, default_profile_off, sizeof(default_profile_off));
+  map_on[SLOT_PWR_CLICK] = ACTION_BLAST;
+  map_on[SLOT_PWR_HOLD_LONG] = ACTION_OFF;
+  map_on[SLOT_PWR_DOUBLE_CLICK] = ACTION_BLAST;
+  map_on[SLOT_PWR_DOUBLE_HOLD] = ACTION_LIGHTNING_BLOCK;
+  map_on[SLOT_PWR_TRIPLE_CLICK] = ACTION_BLAST;
+  map_on[SLOT_PWR_TRIPLE_HOLD] = ACTION_TOGGLE_BATTLE_MODE;
+  map_on[SLOT_PWR_MOD_CLASH] = ACTION_LOCKUP_OR_DRAG;
+  map_on[SLOT_PWR_MOD_STAB] = ACTION_MELT;
+  map_on[SLOT_PWR_MOD_SWING] = ACTION_TOGGLE_MULTI_BLAST;
+  map_on[SLOT_PWR_MOD_TWIST] = ACTION_FORCE_OR_COLOR_CHANGE;
+}
+
+inline void LoadSa22cTwoButtonProfile(IniAction* map_on, IniAction* map_off) {
+  map_off[SLOT_PWR_CLICK] = ACTION_ON_OR_VOLUME_UP;
+  map_off[SLOT_PWR_LONG_CLICK] = ACTION_TRACK_PLAYER;
+  map_off[SLOT_PWR_HOLD_LONG] = ACTION_PREV_PRESET_IF_NOT_VOLUME_MENU;
+  map_off[SLOT_PWR_DOUBLE_HOLD] = ACTION_ACTIVATE_MUTED;
+  map_off[SLOT_AUX_CLICK] = ACTION_NEXT_PRESET_OR_VOLUME_DOWN;
+  map_off[SLOT_AUX_LONG_CLICK] = ACTION_TOGGLE_VOLUME_MENU;
+  map_off[SLOT_AUX_HOLD_LONG] = ACTION_BATTERY_LEVEL;
+
+  map_on[SLOT_PWR_HOLD_MEDIUM] = ACTION_OFF;
+  map_on[SLOT_PWR_DOUBLE_CLICK] = ACTION_FORCE;
+  map_on[SLOT_PWR_DOUBLE_HOLD] = ACTION_LIGHTNING_BLOCK;
+  map_on[SLOT_PWR_TRIPLE_HOLD] = ACTION_TOGGLE_BATTLE_MODE;
+  map_on[SLOT_AUX_CLICK] = ACTION_BLAST;
+  map_on[SLOT_AUX_HOLD] = ACTION_LOCKUP_OR_DRAG;
+  map_on[SLOT_AUX_DOUBLE_CLICK] = ACTION_BLAST;
+  map_on[SLOT_AUX_DOUBLE_HOLD] = ACTION_TOGGLE_MULTI_BLAST;
+  map_on[SLOT_AUX_TRIPLE_CLICK] = ACTION_BLAST;
+  map_on[SLOT_PWR_AUX_CLICK] = ACTION_COLOR_CHANGE;
+  map_on[SLOT_PWR_MOD_STAB] = ACTION_MELT;
+}
+
+inline void LoadSa22cThreeButtonProfile(IniAction* map_on, IniAction* map_off) {
+  LoadSa22cTwoButtonProfile(map_on, map_off);
+  map_off[SLOT_AUX2_CLICK] = ACTION_PREV_PRESET;
+  map_on[SLOT_AUX2_HOLD] = ACTION_LIGHTNING_BLOCK;
+  map_on[SLOT_AUX2_DOUBLE_HOLD] = ACTION_TOGGLE_BATTLE_MODE;
+  map_on[SLOT_PWR_TRIPLE_HOLD] = ACTION_NONE;
+}
+
+void LoadButtonProfile(const char* profile_name,
+                       uint8_t num_buttons,
+                       IniAction* map_on,
+                       IniAction* map_off) {
+  const bool sa22c =
+      !profile_name ||
+      strcasecmp(profile_name, "default") == 0 ||
+      strcasecmp(profile_name, "sa22c") == 0;
+  (void)sa22c;
+
+  ClearProfile(map_on, map_off);
+  if (num_buttons >= 3) {
+    LoadSa22cThreeButtonProfile(map_on, map_off);
+  } else if (num_buttons == 2) {
+    LoadSa22cTwoButtonProfile(map_on, map_off);
+  } else {
+    LoadSa22cOneButtonProfile(map_on, map_off);
+  }
 }
 
 #endif // PROPS_BUTTON_PROFILES_H

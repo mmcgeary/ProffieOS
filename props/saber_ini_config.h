@@ -32,9 +32,13 @@
 
 class SaberIniConfig : public PropBase {
 public:
-  SaberIniConfig() : PropBase(), ini_loaded_(false), active_lockup_slot_(-1) {
+  SaberIniConfig() : PropBase(), ini_loaded_(false), blade_out_loaded_(false), active_lockup_slot_(-1) {
     config_.SetDefaults();
     blade_in_config_.SetDefaults();
+    blade_out_config_.SetDefaults();
+    ApplyButtonProfileDefaults(&config_);
+    ApplyButtonProfileDefaults(&blade_in_config_);
+    ApplyButtonProfileDefaults(&blade_out_config_);
   }
 
   const char* name() override { return "SaberIniConfig"; }
@@ -42,6 +46,13 @@ public:
   void Setup() override {
     PropBase::Setup();
     LoadIniConfig();
+  }
+
+  void Off(OffType off_type = OFF_NORMAL,
+           EffectLocation location = EffectLocation()) override {
+    battle_mode_ = false;
+    swing_blast_ = false;
+    PropBase::Off(off_type, location);
   }
 
   void FindBlade(bool announce = false) {
@@ -56,7 +67,7 @@ public:
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
     // Handle gesture events (BUTTON_NONE with motion events)
     if (button == BUTTON_NONE) {
-      return HandleGestureEvent(event, modifiers);
+      if (HandleGestureEvent(event, modifiers)) return true;
     }
 
 #ifdef BLADE_DETECT_PIN
@@ -84,6 +95,15 @@ public:
 
     IniAction action = action_map[slot];
     if (action == ACTION_NONE) return false;
+
+    if (battle_mode_ &&
+        (action == ACTION_LOCKUP ||
+         action == ACTION_DRAG ||
+         action == ACTION_MELT ||
+         action == ACTION_STAB ||
+         action == ACTION_LOCKUP_OR_DRAG)) {
+      return true;
+    }
 
     // Track sustained actions for release handling
     if (IsSustainedAction(action) && IsOn()) {
@@ -122,6 +142,69 @@ public:
     }
   }
 
+  void OnOrVolumeUp() {
+    if (!mode_volume_) {
+      On();
+    } else {
+      VolumeUp();
+    }
+  }
+
+  void NextPresetOrVolumeDown() {
+    if (!mode_volume_) {
+      next_preset();
+    } else {
+      VolumeDown();
+    }
+  }
+
+  void PrevPresetIfNotVolumeMenu() {
+    if (!mode_volume_) {
+      previous_preset();
+    }
+  }
+
+  void ActivateMuted() {
+    if (SetMute(true)) {
+      unmute_on_deactivation_ = true;
+      On();
+    }
+  }
+
+  void ToggleVolumeMenu() {
+    mode_volume_ = !mode_volume_;
+    beeper.Beep(0.5, 3000);
+  }
+
+  void ToggleBattleMode() {
+    battle_mode_ = !battle_mode_;
+    beeper.Beep(0.5, battle_mode_ ? 2600 : 1800);
+  }
+
+  void ToggleMultiBlast() {
+    swing_blast_ = !swing_blast_;
+  }
+
+  void ForceOrColorChange() {
+#ifndef DISABLE_COLOR_CHANGE
+    if (accel_.x < -0.15f) {
+      ToggleColorChangeMode();
+      return;
+    }
+#endif
+    SaberBase::DoForce();
+  }
+
+  void LockupOrDrag() {
+    if (SaberBase::Lockup() != SaberBase::LOCKUP_NONE) return;
+    if (accel_.x < -0.15f) {
+      SaberBase::SetLockup(SaberBase::LOCKUP_DRAG);
+    } else {
+      SaberBase::SetLockup(SaberBase::LOCKUP_NORMAL);
+    }
+    SaberBase::DoBeginLockup();
+  }
+
   void SayBatteryLevel() {
     talkie.SayNumber((int)(battery_monitor.battery_percent()));
   }
@@ -129,13 +212,19 @@ public:
 private:
   RuntimeConfig config_;
   RuntimeConfig blade_in_config_;
+  RuntimeConfig blade_out_config_;
   bool ini_loaded_;
+  bool blade_out_loaded_;
   bool color_change_mode_ = false;
+  bool mode_volume_ = false;
+  bool battle_mode_ = false;
+  bool swing_blast_ = false;
   int active_lockup_slot_;
 
   void LoadIniConfig() {
     RuntimeConfig loaded;
     loaded.SetDefaults();
+    ApplyButtonProfileDefaults(&loaded);
 
     if (!LSFS::Exists(INI_CONFIG_FILE)) {
       PlayAlert(INI_ALERT_MISSING);
@@ -149,56 +238,63 @@ private:
       return;
     }
 
-    ApplyButtonProfile(&loaded);
     blade_in_config_ = loaded;
-    config_ = blade_in_config_;
-    ActivateLoadedConfig();
+    blade_out_loaded_ = LoadBladeOutConfig();
+    SelectActiveConfigForBladeState();
+    ApplyGlobalConfig();
+
+    if (!RegeneratePresetBanks()) {
+      PlayAlert(INI_ALERT_ERROR);
+      ini_loaded_ = false;
+      return;
+    }
+    ini_loaded_ = true;
   }
 
   bool LoadBladeOutConfig() {
     if (!LSFS::Exists(INI_BLADE_OUT_FILE)) return false;
 
-    RuntimeConfig blade_out_config;
-    blade_out_config.SetDefaults();
+    blade_out_config_.SetDefaults();
+    ApplyButtonProfileDefaults(&blade_out_config_);
 
-    if (IniLoader::Load(INI_BLADE_OUT_FILE, &blade_out_config)) {
-      CopyGlobalAndActions(blade_in_config_, &blade_out_config);
-      config_ = blade_out_config;
-      return ActivateLoadedConfig();
+    if (IniLoader::Load(INI_BLADE_OUT_FILE, &blade_out_config_)) {
+      CopyGlobalAndActions(blade_in_config_, &blade_out_config_);
+      return true;
     }
     PlayAlert(INI_ALERT_ERROR);
     return false;
   }
 
-  bool ActivateLoadedConfig() {
-    ApplyGlobalConfig();
-    if (!PresetBuilder::WritePresetsFile(&config_, INI_BUILT_PRESETS_FILE)) {
-      PlayAlert(INI_ALERT_ERROR);
-      ini_loaded_ = false;
-      return false;
+  bool WriteConfigForSaveDir(const RuntimeConfig* runtime, const char* save_dir) {
+    char presets_path[128];
+    BuildSaveDirPath(save_dir, INI_BUILT_PRESETS_FILE,
+                     presets_path, sizeof(presets_path));
+    return PresetBuilder::WritePresetsFile(runtime, presets_path);
+  }
+
+  bool RegeneratePresetBanks() {
+    bool ok = true;
+    for (size_t i = 0; i < NELEM(blades); i++) {
+      const bool is_noblade_bank = blades[i].ohm >= NO_BLADE;
+      const RuntimeConfig* source =
+          (is_noblade_bank && blade_out_loaded_) ? &blade_out_config_ : &blade_in_config_;
+      const char* save_dir = blades[i].save_dir ? blades[i].save_dir : "";
+      if (!WriteConfigForSaveDir(source, save_dir)) {
+        ok = false;
+      }
     }
-    ini_loaded_ = true;
-    return true;
+    return ok;
   }
 
-  bool ActivateBladeInConfig() {
-    config_ = blade_in_config_;
-    return ActivateLoadedConfig();
-  }
-
-  void ApplyButtonProfile(RuntimeConfig* runtime) {
-    IniAction default_on[INI_MAX_SLOTS];
-    IniAction default_off[INI_MAX_SLOTS];
-    LoadButtonProfile(runtime->global.button_profile, default_on, default_off);
-
-    // INI overrides take precedence over profile defaults
-    for (int i = 0; i < INI_MAX_SLOTS; i++) {
-      if (runtime->action_map_on[i] == ACTION_NONE) {
-        runtime->action_map_on[i] = default_on[i];
-      }
-      if (runtime->action_map_off[i] == ACTION_NONE) {
-        runtime->action_map_off[i] = default_off[i];
-      }
+  void SelectActiveConfigForBladeState() {
+    bool use_blade_out = false;
+#ifdef BLADE_DETECT_PIN
+    use_blade_out = ShouldUseBladeOutConfig(blade_detected_, blade_out_loaded_);
+#endif
+    if (use_blade_out) {
+      config_ = blade_out_config_;
+    } else {
+      config_ = blade_in_config_;
     }
   }
 
@@ -228,6 +324,10 @@ private:
           break;
       }
     } else {
+      if (event == EVENT_SWING && swing_blast_) {
+        SaberBase::DoBlast();
+        return true;
+      }
       // ON gestures — deactivation and effects
       switch (event) {
         case EVENT_TWIST:
@@ -275,14 +375,8 @@ private:
 
     blade_detected_ = blade_inserted;
     if (ini_loaded_) {
-      const bool has_blade_out = LSFS::Exists(INI_BLADE_OUT_FILE);
-      if (ShouldUseBladeOutConfig(blade_detected_, has_blade_out)) {
-        if (!LoadBladeOutConfig()) {
-          ActivateBladeInConfig();
-        }
-      } else {
-        ActivateBladeInConfig();
-      }
+      SelectActiveConfigForBladeState();
+      ApplyGlobalConfig();
     }
     FindBladeAgain();
     SaberBase::DoBladeDetect(blade_inserted);

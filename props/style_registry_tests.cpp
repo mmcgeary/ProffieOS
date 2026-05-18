@@ -42,6 +42,25 @@ char* itoa(int value, char* str, int radix) {
 #undef private
 #include "style_registry.h"
 
+struct SaberBase {
+  enum LockupType {
+    LOCKUP_NONE = 0,
+    LOCKUP_NORMAL,
+    LOCKUP_DRAG,
+    LOCKUP_MELT,
+    LOCKUP_LIGHTNING_BLOCK,
+  };
+  static LockupType Lockup() { return LOCKUP_NONE; }
+  static void SetLockup(LockupType) {}
+  static void DoBeginLockup() {}
+  static void DoBlast() {}
+  static void DoClash() {}
+  static void DoForce() {}
+  static void DoStab() {}
+};
+
+#include "action_dispatch.h"
+
 static std::vector<std::string> SplitTokens(const char* input) {
   std::vector<std::string> out;
   const char* p = input;
@@ -339,6 +358,123 @@ static void TestCopyGlobalAndActionsPreservesSourceValues() {
   CHECK(dst.action_map_off[1] == src.action_map_off[1]);
 }
 
+static void TestApplyButtonProfileDefaultsPopulatesPowerSlots() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  CHECK(cfg.action_map_on[0] == ACTION_NONE);
+  CHECK(cfg.action_map_off[0] == ACTION_NONE);
+
+  ApplyButtonProfileDefaults(&cfg);
+
+  CHECK(cfg.action_map_on[0] == ACTION_NONE);
+  CHECK(cfg.action_map_off[0] == ACTION_ON_OR_VOLUME_UP);
+}
+
+static void TestIniLoadSequenceReappliesButtonDefaults() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  ApplyButtonProfileDefaults(&cfg);
+  CHECK(cfg.action_map_on[0] == ACTION_NONE);
+  CHECK(cfg.action_map_off[0] == ACTION_ON_OR_VOLUME_UP);
+
+  // IniLoader::Load starts by resetting config defaults before parsing.
+  cfg.SetDefaults();
+  IniLoader::ParseGlobal("num_buttons", "1", &cfg.global);
+  IniLoader::ParseGlobal("button_profile", "default", &cfg.global);
+  IniLoader::FinalizeButtonMappings(&cfg);
+
+  CHECK(cfg.action_map_on[0] == ACTION_BLAST);
+  CHECK(cfg.action_map_off[0] == ACTION_ON_OR_VOLUME_UP);
+}
+
+static void TestBuildSaveDirPathForPresetsFile() {
+  char path[128];
+  BuildSaveDirPath("", "presets.ini", path, sizeof(path));
+  CHECK(strcmp(path, "presets.ini") == 0);
+
+  BuildSaveDirPath("blade", "presets.ini", path, sizeof(path));
+  CHECK(strcmp(path, "blade/presets.ini") == 0);
+
+  BuildSaveDirPath("noblade", "presets.ini", path, sizeof(path));
+  CHECK(strcmp(path, "noblade/presets.ini") == 0);
+}
+
+static void TestSa22cProfileDefaultsOneButton() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  cfg.global.num_buttons = 1;
+  ApplyButtonProfileDefaults(&cfg);
+
+  CHECK(cfg.action_map_off[SLOT_PWR_CLICK] == ACTION_ON_OR_VOLUME_UP);
+  CHECK(cfg.action_map_off[SLOT_PWR_LONG_CLICK] == ACTION_NEXT_PRESET_OR_VOLUME_DOWN);
+  CHECK(cfg.action_map_off[SLOT_PWR_DOUBLE_CLICK] == ACTION_TRACK_PLAYER);
+  CHECK(cfg.action_map_off[SLOT_PWR_DOUBLE_HOLD] == ACTION_ACTIVATE_MUTED);
+  CHECK(cfg.action_map_off[SLOT_PWR_TRIPLE_CLICK] == ACTION_BATTERY_LEVEL);
+  CHECK(cfg.action_map_off[SLOT_PWR_MOD_CLASH] == ACTION_TOGGLE_VOLUME_MENU);
+
+  CHECK(cfg.action_map_on[SLOT_PWR_CLICK] == ACTION_BLAST);
+  CHECK(cfg.action_map_on[SLOT_PWR_HOLD_LONG] == ACTION_OFF);
+  CHECK(cfg.action_map_on[SLOT_PWR_DOUBLE_CLICK] == ACTION_BLAST);
+  CHECK(cfg.action_map_on[SLOT_PWR_DOUBLE_HOLD] == ACTION_LIGHTNING_BLOCK);
+  CHECK(cfg.action_map_on[SLOT_PWR_TRIPLE_HOLD] == ACTION_TOGGLE_BATTLE_MODE);
+  CHECK(cfg.action_map_on[SLOT_PWR_MOD_CLASH] == ACTION_LOCKUP_OR_DRAG);
+  CHECK(cfg.action_map_on[SLOT_PWR_MOD_STAB] == ACTION_MELT);
+  CHECK(cfg.action_map_on[SLOT_PWR_MOD_SWING] == ACTION_TOGGLE_MULTI_BLAST);
+  CHECK(cfg.action_map_on[SLOT_PWR_MOD_TWIST] == ACTION_FORCE_OR_COLOR_CHANGE);
+}
+
+static void TestSa22cProfileDefaultsTwoButton() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  cfg.global.num_buttons = 2;
+  ApplyButtonProfileDefaults(&cfg);
+
+  CHECK(cfg.action_map_off[SLOT_PWR_CLICK] == ACTION_ON_OR_VOLUME_UP);
+  CHECK(cfg.action_map_off[SLOT_PWR_LONG_CLICK] == ACTION_TRACK_PLAYER);
+  CHECK(cfg.action_map_off[SLOT_PWR_HOLD_LONG] == ACTION_PREV_PRESET_IF_NOT_VOLUME_MENU);
+  CHECK(cfg.action_map_off[SLOT_PWR_DOUBLE_HOLD] == ACTION_ACTIVATE_MUTED);
+  CHECK(cfg.action_map_off[SLOT_AUX_CLICK] == ACTION_NEXT_PRESET_OR_VOLUME_DOWN);
+  CHECK(cfg.action_map_off[SLOT_AUX_LONG_CLICK] == ACTION_TOGGLE_VOLUME_MENU);
+  CHECK(cfg.action_map_off[SLOT_AUX_HOLD_LONG] == ACTION_BATTERY_LEVEL);
+
+  CHECK(cfg.action_map_on[SLOT_PWR_HOLD_MEDIUM] == ACTION_OFF);
+  CHECK(cfg.action_map_on[SLOT_PWR_DOUBLE_CLICK] == ACTION_FORCE);
+  CHECK(cfg.action_map_on[SLOT_PWR_DOUBLE_HOLD] == ACTION_LIGHTNING_BLOCK);
+  CHECK(cfg.action_map_on[SLOT_PWR_TRIPLE_HOLD] == ACTION_TOGGLE_BATTLE_MODE);
+  CHECK(cfg.action_map_on[SLOT_AUX_CLICK] == ACTION_BLAST);
+  CHECK(cfg.action_map_on[SLOT_AUX_HOLD] == ACTION_LOCKUP_OR_DRAG);
+  CHECK(cfg.action_map_on[SLOT_AUX_DOUBLE_HOLD] == ACTION_TOGGLE_MULTI_BLAST);
+  CHECK(cfg.action_map_on[SLOT_PWR_AUX_CLICK] == ACTION_COLOR_CHANGE);
+  CHECK(cfg.action_map_on[SLOT_PWR_MOD_STAB] == ACTION_MELT);
+}
+
+static void TestSa22cProfileDefaultsThreeButton() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  cfg.global.num_buttons = 3;
+  ApplyButtonProfileDefaults(&cfg);
+
+  CHECK(cfg.action_map_off[SLOT_AUX2_CLICK] == ACTION_PREV_PRESET);
+  CHECK(cfg.action_map_on[SLOT_AUX2_HOLD] == ACTION_LIGHTNING_BLOCK);
+  CHECK(cfg.action_map_on[SLOT_AUX2_DOUBLE_HOLD] == ACTION_TOGGLE_BATTLE_MODE);
+}
+
+static void TestResolveButtonSlotSa22cEvents() {
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_FIRST_SAVED_CLICK_SHORT, 0, 1) == SLOT_PWR_CLICK);
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_SECOND_SAVED_CLICK_SHORT, 0, 1) == SLOT_PWR_DOUBLE_CLICK);
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_THIRD_CLICK_SHORT, 0, 1) == SLOT_PWR_TRIPLE_CLICK);
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_FIRST_HELD_MEDIUM, 0, 2) == SLOT_PWR_HOLD_MEDIUM);
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_SECOND_HELD, 0, 2) == SLOT_PWR_DOUBLE_HOLD);
+  CHECK(ResolveButtonSlot(BUTTON_POWER, EVENT_THIRD_HELD, 0, 2) == SLOT_PWR_TRIPLE_HOLD);
+  CHECK(ResolveButtonSlot(BUTTON_AUX, EVENT_THIRD_CLICK_SHORT, 0, 2) == SLOT_AUX_TRIPLE_CLICK);
+  CHECK(ResolveButtonSlot(BUTTON_AUX, EVENT_SECOND_HELD, 0, 2) == SLOT_AUX_DOUBLE_HOLD);
+  CHECK(ResolveButtonSlot(BUTTON_AUX2, EVENT_SECOND_HELD, 0, 3) == SLOT_AUX2_DOUBLE_HOLD);
+  CHECK(ResolveButtonSlot(BUTTON_NONE, EVENT_CLASH, BUTTON_POWER, 1) == SLOT_PWR_MOD_CLASH);
+  CHECK(ResolveButtonSlot(BUTTON_NONE, EVENT_STAB, BUTTON_POWER, 1) == SLOT_PWR_MOD_STAB);
+  CHECK(ResolveButtonSlot(BUTTON_NONE, EVENT_SWING, BUTTON_POWER, 1) == SLOT_PWR_MOD_SWING);
+  CHECK(ResolveButtonSlot(BUTTON_NONE, EVENT_TWIST, BUTTON_POWER, 1) == SLOT_PWR_MOD_TWIST);
+}
+
 int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
@@ -348,5 +484,12 @@ int main() {
   TestStyleStringTruncationGuard();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();
+  TestApplyButtonProfileDefaultsPopulatesPowerSlots();
+  TestIniLoadSequenceReappliesButtonDefaults();
+  TestBuildSaveDirPathForPresetsFile();
+  TestSa22cProfileDefaultsOneButton();
+  TestSa22cProfileDefaultsTwoButton();
+  TestSa22cProfileDefaultsThreeButton();
+  TestResolveButtonSlotSa22cEvents();
   return 0;
 }
