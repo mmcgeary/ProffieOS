@@ -9,7 +9,7 @@
 #endif
 
 #define INI_MAX_PRESETS 20
-#define INI_MAX_SLOTS 23
+#define INI_MAX_SLOTS 34
 #define INI_MAX_STYLE_NAME_LEN 24
 #define INI_MAX_FONT_PATH_LEN 64
 #define INI_MAX_TRACK_PATH_LEN 64
@@ -47,6 +47,15 @@ enum IniAction {
   ACTION_QUOTE,
   ACTION_ENTER_COLOR_CHANGE,
   ACTION_EXIT_COLOR_CHANGE,
+  ACTION_ON_OR_VOLUME_UP,
+  ACTION_NEXT_PRESET_OR_VOLUME_DOWN,
+  ACTION_PREV_PRESET_IF_NOT_VOLUME_MENU,
+  ACTION_ACTIVATE_MUTED,
+  ACTION_TOGGLE_VOLUME_MENU,
+  ACTION_TOGGLE_BATTLE_MODE,
+  ACTION_TOGGLE_MULTI_BLAST,
+  ACTION_FORCE_OR_COLOR_CHANGE,
+  ACTION_LOCKUP_OR_DRAG,
   ACTION_COUNT
 };
 
@@ -77,6 +86,15 @@ const ActionNameEntry action_name_table[] = {
   {"quote", ACTION_QUOTE},
   {"enter_color_change", ACTION_ENTER_COLOR_CHANGE},
   {"exit_color_change", ACTION_EXIT_COLOR_CHANGE},
+  {"on_or_volume_up", ACTION_ON_OR_VOLUME_UP},
+  {"next_preset_or_volume_down", ACTION_NEXT_PRESET_OR_VOLUME_DOWN},
+  {"prev_preset_if_not_volume_menu", ACTION_PREV_PRESET_IF_NOT_VOLUME_MENU},
+  {"activate_muted", ACTION_ACTIVATE_MUTED},
+  {"toggle_volume_menu", ACTION_TOGGLE_VOLUME_MENU},
+  {"toggle_battle_mode", ACTION_TOGGLE_BATTLE_MODE},
+  {"toggle_multi_blast", ACTION_TOGGLE_MULTI_BLAST},
+  {"force_or_color_change", ACTION_FORCE_OR_COLOR_CHANGE},
+  {"lockup_or_drag", ACTION_LOCKUP_OR_DRAG},
 };
 
 const int ACTION_NAME_COUNT = sizeof(action_name_table) / sizeof(action_name_table[0]);

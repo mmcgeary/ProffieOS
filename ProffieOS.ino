@@ -25,7 +25,7 @@
 |  Add the slashes to any that you are not using.                   |
 \*-----------------------------------------------------------------*/
 
- #define CONFIG_FILE "config/ini_config_example.h"
+ #define CONFIG_FILE "config/mhs4_ini.h"
 
 // #define CONFIG_FILE "config/default_proffieboard_config.h"
 // #define CONFIG_FILE "config/proffieboard_v1_test_bench_config.h"
