@@ -5,6 +5,7 @@
 
 class ArgParserInterface {
 public:
+  virtual ~ArgParserInterface() {}
   virtual const char* GetArg(int arg_num,
 			     const char* name,
 			     const char* default_value) = 0;

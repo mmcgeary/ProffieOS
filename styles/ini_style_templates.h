@@ -36,7 +36,7 @@ using IniPrimaryBlade = InOutTr<
         AlphaL<
             Mix<IntArg<ini_args::kBaseContrastArg, 22000>, Black, RgbArg<ini_args::kAltColorArg, White>>,
             Mult<
-                PulsingF<IntArg<ini_args::kFlickerSpeedArg, 1000>>,
+                PulsingF<IntArg<ini_args::kFlickerSpeedArg, 60>>,
                 IntArg<ini_args::kFlickerDepthArg, 12000>>>,
         AlphaL<
             RotateColorsX<IntArg<ini_args::kDriftRateArg, 600>, RgbArg<ini_args::kBaseColorArg, CYAN>>,
@@ -156,7 +156,7 @@ using IniBasePulse =
         AlphaL<
             RgbArg<ini_args::kAltColorArg, WHITE>,
             Mult<
-                PulsingF<IntArg<ini_args::kArg3, 1400>>,
+                PulsingF<IntArg<ini_args::kArg3, 43>>,
                 Mult<IntArg<ini_args::kArg4, 9000>, Int<16384>>>>>;
 using IniBaseRotoscope =
     HumpFlicker<

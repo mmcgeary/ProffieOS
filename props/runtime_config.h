@@ -9,6 +9,7 @@
 #endif
 
 #define INI_MAX_PRESETS 20
+
 #define INI_MAX_SLOTS 34
 #define INI_MAX_STYLE_NAME_LEN 24
 #define INI_MAX_FONT_PATH_LEN 64

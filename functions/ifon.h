@@ -38,6 +38,7 @@ private:
 
 class InOutFuncSVFBase {
 public:
+  InOutFuncSVFBase() : last_micros_(micros()) {}
   FunctionRunResult run(BladeBase* blade, int out_millis, int in_millis) {
     uint32_t now = micros();
     uint32_t delta = now - last_micros_;

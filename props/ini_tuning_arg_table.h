@@ -5,7 +5,7 @@
 
 #define INI_TUNING_ARG_TABLE(X) \
   X(flicker_depth, kFlickerDepthArg, "flicker_depth", 12000) \
-  X(flicker_speed, kFlickerSpeedArg, "flicker_speed", 1000) \
+  X(flicker_speed, kFlickerSpeedArg, "flicker_speed", 60) \
   X(stripe_width, kStripeWidthArg, "stripe_width", 5000) \
   X(stripe_speed, kStripeSpeedArg, "stripe_speed", 900) \
   X(motion_gain, kMotionGainArg, "motion_gain", 4096) \

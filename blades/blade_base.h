@@ -21,6 +21,7 @@ using BladeEffectType = EffectType;
 
 class BladeBase {
 public:
+  virtual ~BladeBase() {}
   // Returns number of LEDs in this blade.
   virtual int num_leds() const = 0;
 
