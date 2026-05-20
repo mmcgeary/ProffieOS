@@ -387,6 +387,13 @@ static void TestIniLoadSequenceReappliesButtonDefaults() {
   CHECK(cfg.action_map_off[0] == ACTION_ON_OR_VOLUME_UP);
 }
 
+static void TestNBladeRuntimeDefaults() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  CHECK(cfg.num_blades >= 1);
+  CHECK(strcmp(cfg.presets[0].blades[0].style_name, "standard") == 0);
+}
+
 static void TestBuildSaveDirPathForPresetsFile() {
   char path[128];
   BuildSaveDirPath("", "presets.ini", path, sizeof(path));
@@ -498,6 +505,7 @@ int main() {
   TestCopyGlobalAndActionsPreservesSourceValues();
   TestApplyButtonProfileDefaultsPopulatesPowerSlots();
   TestIniLoadSequenceReappliesButtonDefaults();
+  TestNBladeRuntimeDefaults();
   TestBuildSaveDirPathForPresetsFile();
   TestSa22cProfileDefaultsOneButton();
   TestSa22cProfileDefaultsTwoButton();
