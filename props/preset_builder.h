@@ -57,9 +57,7 @@ public:
       f.print(p->track[0] ? p->track : "");
       f.print("\n");
 
-      uint8_t style_blade_count = p->blade_count;
-      if (style_blade_count < 1) style_blade_count = 1;
-      if (style_blade_count > INI_NUM_BLADES) style_blade_count = INI_NUM_BLADES;
+      uint8_t style_blade_count = ResolveStyleBladeCount(config, p);
       for (uint8_t blade_idx = 0; blade_idx < style_blade_count; blade_idx++) {
         int len = BuildBladeStyle(p, blade_idx, style_buf, sizeof(style_buf));
         if (len > 0) {

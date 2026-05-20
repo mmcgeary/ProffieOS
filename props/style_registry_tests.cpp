@@ -14,6 +14,10 @@
 #define SCOPED_PROFILER() do {} while (0)
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+#ifndef INI_NUM_BLADES
+#define INI_NUM_BLADES 2
+#endif
+
 uint32_t micros() { return 0; }
 uint32_t millis() { return 0; }
 int random(int x) { return x > 0 ? (rand() % x) : 0; }
@@ -317,6 +321,39 @@ static void TestParsePerBladePresetKeys() {
   CHECK(p.blades[1].flicker_depth == 9000);
 }
 
+static void TestResolveStyleBladeCount() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  IniPreset preset;
+  preset.SetDefaults();
+
+  cfg.num_blades = 2;
+  preset.blade_count = 1;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 2);
+
+  cfg.num_blades = 1;
+  preset.blade_count = 2;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 2);
+
+  cfg.num_blades = 0;
+  preset.blade_count = 0;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 1);
+}
+
+static void TestBuildStyleFallsBackToBladeZeroForMissingBlade() {
+  IniPreset preset;
+  preset.SetDefaults();
+  preset.blade_count = 1;
+  strcpy(preset.blades[0].style_name, "standard");
+  preset.blades[0].flicker_depth = 2345;
+
+  char blade0[1024];
+  char blade1[1024];
+  CHECK(BuildIniStyleForBlade(&preset, 0, blade0, sizeof(blade0)) > 0);
+  CHECK(BuildIniStyleForBlade(&preset, 1, blade1, sizeof(blade1)) > 0);
+  CHECK(strcmp(blade0, blade1) == 0);
+}
+
 static void TestStyleStringTruncationGuard() {
   IniPreset p;
   p.SetDefaults();
@@ -513,6 +550,8 @@ int main() {
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
   TestParsePerBladePresetKeys();
+  TestResolveStyleBladeCount();
+  TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();

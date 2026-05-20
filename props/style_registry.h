@@ -8,6 +8,10 @@
 
 #define MAX_STYLE_STRING_LEN 640
 
+#ifndef INI_NUM_BLADES
+#define INI_NUM_BLADES 1
+#endif
+
 struct IniPreset;
 
 typedef int (*StyleBuildFn)(const IniPreset* preset, char* buf, int buf_size);
@@ -325,16 +329,38 @@ static void CopyBladeToLegacyView(const IniBladeStyle& blade, IniPreset* preset_
   preset_view->rainbow_speed = blade.rainbow_speed;
 }
 
+static uint8_t ResolveStyleBladeCount(const RuntimeConfig* config, const IniPreset* preset) {
+  uint8_t style_blade_count = 1;
+  if (config && config->num_blades > style_blade_count) {
+    style_blade_count = config->num_blades;
+  }
+  if (preset && preset->blade_count > style_blade_count) {
+    style_blade_count = preset->blade_count;
+  }
+  if (style_blade_count > INI_NUM_BLADES) {
+    style_blade_count = INI_NUM_BLADES;
+  }
+  if (style_blade_count > INI_MAX_BLADES) {
+    style_blade_count = INI_MAX_BLADES;
+  }
+  return style_blade_count;
+}
+
 static int BuildIniStyleForBlade(const IniPreset* preset,
                                  uint8_t blade_idx,
                                  char* buf,
                                  int buf_size) {
-  if (!preset || blade_idx >= preset->blade_count || blade_idx >= INI_MAX_BLADES) {
+  if (!preset || blade_idx >= INI_MAX_BLADES) {
     return -1;
   }
 
+  uint8_t source_blade = blade_idx;
+  if (preset->blade_count == 0 || source_blade >= preset->blade_count) {
+    source_blade = 0;
+  }
+
   IniPreset blade_view = *preset;
-  CopyBladeToLegacyView(preset->blades[blade_idx], &blade_view);
+  CopyBladeToLegacyView(preset->blades[source_blade], &blade_view);
 
   const IniStyleEntry* style = FindIniStyle(blade_view.style_name);
   if (!style) {
