@@ -12,22 +12,24 @@
 
 class PresetBuilder {
 public:
-  static int BuildMainStyle(const IniPreset* preset, char* buf, int buf_size) {
-    const IniStyleEntry* style = FindIniStyle(preset->style_name);
-    if (!style) {
-      style = &ini_style_registry[0];  // fallback to "standard"
+  static int BuildBladeStyle(const IniPreset* preset,
+                             uint8_t blade_idx,
+                             char* buf,
+                             int buf_size) {
+    int len = BuildIniStyleForBlade(preset, blade_idx, buf, buf_size);
+    if (len > 0) {
+      return len;
     }
-    return style->build(preset, buf, buf_size);
-  }
 
-  static int BuildAccentStyle(const IniPreset* preset, char* buf, int buf_size) {
-    if (preset->accent_style[0] == 0) return 0;
-
-    const IniStyleEntry* style = FindAccentStyle(preset->accent_style);
-    if (!style) {
-      style = &ini_accent_registry[3];  // fallback to "static"
+    if (blade_idx == 0) {
+      const IniStyleEntry* style = FindIniStyle(preset->style_name);
+      if (!style) {
+        style = &ini_style_registry[0];  // fallback to "standard"
+      }
+      return style->build(preset, buf, buf_size);
     }
-    return style->build(preset, buf, buf_size);
+
+    return len;
   }
 
   static bool WritePresetsFile(const RuntimeConfig* config, const char* filename) {
@@ -55,25 +57,19 @@ public:
       f.print(p->track[0] ? p->track : "");
       f.print("\n");
 
-      // Main blade style
-      int len = BuildMainStyle(p, style_buf, sizeof(style_buf));
-      if (len > 0) {
-        f.print("style=");
-        f.print(style_buf);
-        f.print("\n");
+      uint8_t style_blade_count = p->blade_count;
+      if (style_blade_count < 1) style_blade_count = 1;
+      if (style_blade_count > INI_NUM_BLADES) style_blade_count = INI_NUM_BLADES;
+      for (uint8_t blade_idx = 0; blade_idx < style_blade_count; blade_idx++) {
+        int len = BuildBladeStyle(p, blade_idx, style_buf, sizeof(style_buf));
+        if (len > 0) {
+          f.print("style=");
+          f.print(style_buf);
+          f.print("\n");
+        } else {
+          f.print("style=static 0,0,0\n");
+        }
       }
-
-      // Additional blades (accent/crystal) if configured
-#if INI_NUM_BLADES > 1
-      len = BuildAccentStyle(p, style_buf, sizeof(style_buf));
-      if (len > 0) {
-        f.print("style=");
-        f.print(style_buf);
-        f.print("\n");
-      } else {
-        f.print("style=static 0,0,0\n");
-      }
-#endif
 
       f.print("name=");
       f.print(p->name);

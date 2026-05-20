@@ -306,6 +306,17 @@ static void TestBaseContrastAliasAndClamps() {
   CHECK(p.off_rate_ms == 60000);
 }
 
+static void TestParsePerBladePresetKeys() {
+  IniPreset p;
+  p.SetDefaults();
+  IniLoader::ParsePreset("blade1_style", "standard", &p);
+  IniLoader::ParsePreset("blade2_style", "pulse", &p);
+  IniLoader::ParsePreset("blade2_flicker_depth", "9000", &p);
+  CHECK(strcmp(p.blades[0].style_name, "standard") == 0);
+  CHECK(strcmp(p.blades[1].style_name, "pulse") == 0);
+  CHECK(p.blades[1].flicker_depth == 9000);
+}
+
 static void TestStyleStringTruncationGuard() {
   IniPreset p;
   p.SetDefaults();
@@ -501,6 +512,7 @@ int main() {
   TestNumericArgPositionsRemainStable();
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
+  TestParsePerBladePresetKeys();
   TestStyleStringTruncationGuard();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();
