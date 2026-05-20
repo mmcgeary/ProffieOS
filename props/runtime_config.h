@@ -197,6 +197,9 @@ struct IniPreset {
   char font[INI_MAX_FONT_PATH_LEN];
   char track[INI_MAX_TRACK_PATH_LEN];
   char name[INI_MAX_KEY_LEN];
+  // Task 1 invariant:
+  // - blades[0..blade_count-1] is the canonical n-blade representation.
+  // - Legacy scalar fields below mirror blades[0] for compatibility paths.
   uint8_t blade_count;
   IniBladeStyle blades[INI_MAX_BLADES];
 
@@ -242,6 +245,16 @@ struct IniPreset {
   uint8_t off_mode;
   uint16_t off_rate_ms;
 
+  static uint8_t ClampBladeCount(uint8_t count) {
+    if (count < 1) return 1;
+    if (count > INI_MAX_BLADES) return INI_MAX_BLADES;
+    return count;
+  }
+
+  void SetBladeCountFromRuntime(uint8_t runtime_blade_count) {
+    blade_count = ClampBladeCount(runtime_blade_count);
+  }
+
   void CopyBlade0ToLegacyView() {
     const IniBladeStyle& blade = blades[0];
     strcpy(style_name, blade.style_name);
@@ -283,7 +296,7 @@ struct IniPreset {
     strcpy(font, "font1");
     track[0] = 0;
     strcpy(name, "Default");
-    blade_count = 1;
+    SetBladeCountFromRuntime(1);
     for (int i = 0; i < INI_MAX_BLADES; i++) {
       blades[i].SetDefaults();
     }
@@ -328,7 +341,7 @@ struct RuntimeConfig {
     num_blades = 1;
     num_presets = 1;
     presets[0].SetDefaults();
-    presets[0].blade_count = num_blades;
+    presets[0].SetBladeCountFromRuntime(num_blades);
     loaded = false;
 
     memset(action_map_on, 0, sizeof(action_map_on));

@@ -391,6 +391,7 @@ static void TestNBladeRuntimeDefaults() {
   RuntimeConfig cfg;
   cfg.SetDefaults();
   CHECK(cfg.num_blades >= 1);
+  CHECK(cfg.presets[0].blade_count == cfg.num_blades);
   CHECK(strcmp(cfg.presets[0].blades[0].style_name, "standard") == 0);
 }
 
