@@ -162,6 +162,12 @@ public:
 
   void Loop() override {
     PropBase::Loop();
+    if (config_) {
+      if (!IsOn() && GestureFlagsNeedOffMotion(config_->global.gesture_flags)) {
+        SaberBase::RequestMotion();
+      }
+      DetectTwist();
+    }
     if (!ini_loaded_ && millis() > 3000) LoadIniConfig(); 
   }
 

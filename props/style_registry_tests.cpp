@@ -475,6 +475,18 @@ static void TestResolveButtonSlotSa22cEvents() {
   CHECK(ResolveButtonSlot(BUTTON_NONE, EVENT_TWIST, BUTTON_POWER, 1) == SLOT_PWR_MOD_TWIST);
 }
 
+static void TestGestureFlagsNeedOffMotion() {
+  CHECK(!GestureFlagsNeedOffMotion(0));
+  CHECK(GestureFlagsNeedOffMotion(GESTURE_TWIST_ON));
+  CHECK(GestureFlagsNeedOffMotion(GESTURE_STAB_ON));
+  CHECK(GestureFlagsNeedOffMotion(GESTURE_SWING_ON));
+  CHECK(GestureFlagsNeedOffMotion(GESTURE_THRUST_ON));
+  CHECK(GestureFlagsNeedOffMotion(GESTURE_TWIST_ON | GESTURE_FORCE_PUSH));
+  CHECK(!GestureFlagsNeedOffMotion(GESTURE_TWIST_OFF));
+  CHECK(!GestureFlagsNeedOffMotion(GESTURE_FORCE_PUSH));
+  CHECK(!GestureFlagsNeedOffMotion(GESTURE_MELT));
+}
+
 int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
@@ -491,5 +503,6 @@ int main() {
   TestSa22cProfileDefaultsTwoButton();
   TestSa22cProfileDefaultsThreeButton();
   TestResolveButtonSlotSa22cEvents();
+  TestGestureFlagsNeedOffMotion();
   return 0;
 }

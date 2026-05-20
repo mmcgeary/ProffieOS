@@ -23,6 +23,13 @@
 #define GESTURE_FORCE_PUSH    (1 << 5)
 #define GESTURE_MELT          (1 << 6)
 
+#define GESTURE_OFF_MOTION_MASK \
+  (GESTURE_TWIST_ON | GESTURE_STAB_ON | GESTURE_SWING_ON | GESTURE_THRUST_ON)
+
+inline bool GestureFlagsNeedOffMotion(uint8_t gesture_flags) {
+  return (gesture_flags & GESTURE_OFF_MOTION_MASK) != 0;
+}
+
 #define OFF_MODE_PULSE  0
 #define OFF_MODE_RANDOM 1
 
