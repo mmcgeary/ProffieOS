@@ -126,91 +126,149 @@ private:
     }
   }
 
+  static bool ParseBladeKey(const char* key, int* blade_idx, const char** blade_key) {
+    if (strncasecmp(key, "blade", 5) != 0) return false;
+    const char* p = key + 5;
+    if (*p < '0' || *p > '9') return false;
+
+    int blade_num = 0;
+    while (*p >= '0' && *p <= '9') {
+      blade_num = blade_num * 10 + (*p - '0');
+      ++p;
+    }
+
+    if (blade_num < 1 || *p != '_' || *(p + 1) == 0) return false;
+    *blade_idx = blade_num - 1;
+    *blade_key = p + 1;
+    return true;
+  }
+
+  static bool ParseColorField(const char* key, const char* val, IniBladeStyle* blade) {
+    char* target = nullptr;
+    if (strcasecmp(key, "base_color") == 0) target = blade->base_color;
+    else if (strcasecmp(key, "alt_color") == 0) target = blade->alt_color;
+    else if (strcasecmp(key, "blast_color") == 0) target = blade->blast_color;
+    else if (strcasecmp(key, "clash_color") == 0) target = blade->clash_color;
+    else if (strcasecmp(key, "lockup_color") == 0) target = blade->lockup_color;
+    else if (strcasecmp(key, "drag_color") == 0) target = blade->drag_color;
+    else if (strcasecmp(key, "lb_color") == 0) target = blade->lb_color;
+    else if (strcasecmp(key, "stab_color") == 0) target = blade->stab_color;
+    else if (strcasecmp(key, "swing_color") == 0) target = blade->swing_color;
+    else if (strcasecmp(key, "emitter_color") == 0) target = blade->emitter_color;
+    else if (strcasecmp(key, "preon_color") == 0) target = blade->preon_color;
+    else if (strcasecmp(key, "off_color") == 0) target = blade->off_color;
+
+    if (!target) return false;
+    ColorToStyleArg(val, target, 20);
+    return true;
+  }
+
+  static bool ParseBladeField(const char* key, const char* val, IniBladeStyle* blade) {
+    if (strcasecmp(key, "style") == 0) {
+      strncpy(blade->style_name, val, INI_MAX_STYLE_NAME_LEN - 1);
+      blade->style_name[INI_MAX_STYLE_NAME_LEN - 1] = 0;
+      return true;
+    } else if (strcasecmp(key, "ignition_time") == 0) {
+      blade->ignition_time = constrain(atoi(val), 50, 2000);
+      return true;
+    } else if (strcasecmp(key, "retraction_time") == 0) {
+      blade->retraction_time = constrain(atoi(val), 50, 2000);
+      return true;
+    } else if (strcasecmp(key, "flicker_depth") == 0) {
+      blade->flicker_depth = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "flicker_speed") == 0) {
+      blade->flicker_speed = constrain(atoi(val), 1, 20000);
+      return true;
+    } else if (strcasecmp(key, "stripe_width") == 0) {
+      blade->stripe_width = constrain(atoi(val), 1, 65535);
+      return true;
+    } else if (strcasecmp(key, "stripe_speed") == 0) {
+      blade->stripe_speed = constrain(atoi(val), 0, 20000);
+      return true;
+    } else if (strcasecmp(key, "motion_gain") == 0) {
+      blade->motion_gain = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "noise_mix") == 0) {
+      blade->noise_mix = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "base_contrast") == 0 ||
+               strcasecmp(key, "core_contrast") == 0) {
+      blade->base_contrast = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "pulse_rate") == 0) {
+      blade->pulse_rate = constrain(atoi(val), 1, 20000);
+      return true;
+    } else if (strcasecmp(key, "pulse_depth") == 0) {
+      blade->pulse_depth = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "strobe_freq") == 0) {
+      blade->strobe_freq = constrain(atoi(val), 1, 200);
+      return true;
+    } else if (strcasecmp(key, "strobe_ms") == 0) {
+      blade->strobe_ms = constrain(atoi(val), 1, 1000);
+      return true;
+    } else if (strcasecmp(key, "drift_rate") == 0) {
+      blade->drift_rate = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "warm_shift") == 0) {
+      blade->warm_shift = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "jitter_amount") == 0) {
+      blade->jitter_amount = constrain(atoi(val), 1, 200);
+      return true;
+    } else if (strcasecmp(key, "spark_mix") == 0) {
+      blade->spark_mix = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "heat_rand") == 0) {
+      blade->heat_rand = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "fire_cooling") == 0) {
+      blade->fire_cooling = constrain(atoi(val), 0, 255);
+      return true;
+    } else if (strcasecmp(key, "rainbow_speed") == 0) {
+      blade->rainbow_speed = constrain(atoi(val), 1, 20000);
+      return true;
+    }
+    return ParseColorField(key, val, blade);
+  }
+
   static void ParsePreset(const char* key, const char* val, IniPreset* p) {
+    int blade_idx = -1;
+    const char* blade_key = nullptr;
+    if (ParseBladeKey(key, &blade_idx, &blade_key)) {
+      if (blade_idx >= 0 && blade_idx < INI_MAX_BLADES &&
+          ParseBladeField(blade_key, val, &p->blades[blade_idx])) {
+        if (blade_idx + 1 > p->blade_count) {
+          p->blade_count = blade_idx + 1;
+        }
+        if (blade_idx == 0) {
+          p->CopyBlade0ToLegacyView();
+        }
+      }
+      return;
+    }
+
     if (strcasecmp(key, "font") == 0) {
       strncpy(p->font, val, INI_MAX_FONT_PATH_LEN - 1);
       p->font[INI_MAX_FONT_PATH_LEN - 1] = 0;
     } else if (strcasecmp(key, "track") == 0) {
       strncpy(p->track, val, INI_MAX_TRACK_PATH_LEN - 1);
       p->track[INI_MAX_TRACK_PATH_LEN - 1] = 0;
-    } else if (strcasecmp(key, "style") == 0) {
-      strncpy(p->style_name, val, INI_MAX_STYLE_NAME_LEN - 1);
-      p->style_name[INI_MAX_STYLE_NAME_LEN - 1] = 0;
     } else if (strcasecmp(key, "name") == 0) {
       strncpy(p->name, val, INI_MAX_KEY_LEN - 1);
       p->name[INI_MAX_KEY_LEN - 1] = 0;
-    } else if (strcasecmp(key, "ignition_time") == 0) {
-      p->ignition_time = constrain(atoi(val), 50, 2000);
-    } else if (strcasecmp(key, "retraction_time") == 0) {
-      p->retraction_time = constrain(atoi(val), 50, 2000);
     } else if (strcasecmp(key, "accent_style") == 0) {
       strncpy(p->accent_style, val, INI_MAX_STYLE_NAME_LEN - 1);
       p->accent_style[INI_MAX_STYLE_NAME_LEN - 1] = 0;
     } else if (strcasecmp(key, "accent_speed") == 0) {
       p->accent_speed = constrain(atoi(val), 100, 10000);
-    } else if (strcasecmp(key, "flicker_depth") == 0) {
-      p->flicker_depth = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "flicker_speed") == 0) {
-      p->flicker_speed = constrain(atoi(val), 1, 20000);
-    } else if (strcasecmp(key, "stripe_width") == 0) {
-      p->stripe_width = constrain(atoi(val), 1, 65535);
-    } else if (strcasecmp(key, "stripe_speed") == 0) {
-      p->stripe_speed = constrain(atoi(val), 0, 20000);
-    } else if (strcasecmp(key, "motion_gain") == 0) {
-      p->motion_gain = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "noise_mix") == 0) {
-      p->noise_mix = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "base_contrast") == 0 ||
-               strcasecmp(key, "core_contrast") == 0) {
-      p->base_contrast = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "pulse_rate") == 0) {
-      p->pulse_rate = constrain(atoi(val), 1, 20000);
-    } else if (strcasecmp(key, "pulse_depth") == 0) {
-      p->pulse_depth = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "strobe_freq") == 0) {
-      p->strobe_freq = constrain(atoi(val), 1, 200);
-    } else if (strcasecmp(key, "strobe_ms") == 0) {
-      p->strobe_ms = constrain(atoi(val), 1, 1000);
-    } else if (strcasecmp(key, "drift_rate") == 0) {
-      p->drift_rate = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "warm_shift") == 0) {
-      p->warm_shift = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "jitter_amount") == 0) {
-      p->jitter_amount = constrain(atoi(val), 1, 200);
-    } else if (strcasecmp(key, "spark_mix") == 0) {
-      p->spark_mix = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "heat_rand") == 0) {
-      p->heat_rand = constrain(atoi(val), 0, 32768);
-    } else if (strcasecmp(key, "fire_cooling") == 0) {
-      p->fire_cooling = constrain(atoi(val), 0, 255);
-    } else if (strcasecmp(key, "rainbow_speed") == 0) {
-      p->rainbow_speed = constrain(atoi(val), 1, 20000);
     } else if (strcasecmp(key, "off_mode") == 0) {
       ParseOffMode(val, p);
     } else if (strcasecmp(key, "off_rate_ms") == 0) {
       p->off_rate_ms = constrain(atoi(val), 10, 60000);
-    } else {
-      ParseColorField(key, val, p);
-    }
-  }
-
-  static void ParseColorField(const char* key, const char* val, IniPreset* p) {
-    char* target = nullptr;
-    if (strcasecmp(key, "base_color") == 0) target = p->base_color;
-    else if (strcasecmp(key, "alt_color") == 0) target = p->alt_color;
-    else if (strcasecmp(key, "blast_color") == 0) target = p->blast_color;
-    else if (strcasecmp(key, "clash_color") == 0) target = p->clash_color;
-    else if (strcasecmp(key, "lockup_color") == 0) target = p->lockup_color;
-    else if (strcasecmp(key, "drag_color") == 0) target = p->drag_color;
-    else if (strcasecmp(key, "lb_color") == 0) target = p->lb_color;
-    else if (strcasecmp(key, "stab_color") == 0) target = p->stab_color;
-    else if (strcasecmp(key, "swing_color") == 0) target = p->swing_color;
-    else if (strcasecmp(key, "emitter_color") == 0) target = p->emitter_color;
-    else if (strcasecmp(key, "preon_color") == 0) target = p->preon_color;
-    else if (strcasecmp(key, "off_color") == 0) target = p->off_color;
-
-    if (target) {
-      ColorToStyleArg(val, target, 20);
+    } else if (ParseBladeField(key, val, &p->blades[0])) {
+      p->CopyBlade0ToLegacyView();
     }
   }
 

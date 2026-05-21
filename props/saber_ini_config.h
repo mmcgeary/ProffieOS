@@ -6,6 +6,34 @@
 #ifndef PROPS_SABER_INI_CONFIG_H
 #define PROPS_SABER_INI_CONFIG_H
 
+#include <cstring>
+
+inline constexpr const char kReadIniCmd[] = "READ_INI";
+inline constexpr const char kWriteIniCmd[] = "WRITE_INI";
+inline constexpr const char kReadIniBankCmd[] = "READ_INI_BANK";
+inline constexpr const char kWriteIniBankCmd[] = "WRITE_INI_BANK";
+inline constexpr const char kBladeInBankArg[] = "blade_in";
+inline constexpr const char kBladeOutBankArg[] = "blade_out";
+inline constexpr const char kBeginIniMarker[] = "---BEGIN_INI---";
+inline constexpr const char kEndIniMarker[] = "---END_INI---";
+
+inline const char* NormalizeIniBankArg(const char* arg) {
+  if (!arg || !arg[0]) return nullptr;
+  if (!strcmp(arg, kBladeInBankArg)) return kBladeInBankArg;
+  if (!strcmp(arg, kBladeOutBankArg)) return kBladeOutBankArg;
+  return nullptr;
+}
+
+inline bool IsIniStreamControlCommand(const char* cmd) {
+  if (!cmd) return false;
+  return !strcmp(cmd, kReadIniCmd) ||
+         !strcmp(cmd, kWriteIniCmd) ||
+         !strcmp(cmd, kReadIniBankCmd) ||
+         !strcmp(cmd, kWriteIniBankCmd);
+}
+
+#ifndef PROFFIE_TEST
+
 #include "prop_base.h"
 #include "ini_parser.h"
 #include "color_resolver.h"
@@ -27,7 +55,7 @@
 
 class SaberIniConfig : public PropBase {
 public:
-  SaberIniConfig() : PropBase(), ini_loaded_(false), active_lockup_slot_(-1) {
+  SaberIniConfig() : PropBase(), ini_loaded_(false), blade_out_loaded_(false), active_lockup_slot_(-1) {
     blade_in_config_ = nullptr;
     blade_out_config_ = nullptr;
     config_ = nullptr;
@@ -49,6 +77,9 @@ public:
     }
     config_ = blade_in_config_;
     LoadIniConfig();
+    LoadBladeOutConfig();
+    SelectActiveConfigForBladeState();
+    ApplyGlobalConfig();
   }
 
   void PlayAlert(const char* filename) {
@@ -64,72 +95,57 @@ public:
   }
 
   bool Parse(const char* cmd, const char* arg) override {
-    if (!strcmp(cmd, "READ_INI")) {
-      LOCK_SD(true);
-      LSFS::LSFILE f = LSFS::Open(INI_CONFIG_FILE);
-      if (f) {
-        STDOUT.println("---BEGIN_INI---");
-        uint8_t buf[128];
-        while (f.available()) {
-          int n = f.read(buf, sizeof(buf));
-          if (n > 0) STDOUT.write(buf, n);
-        }
-        STDOUT.println("\n---END_INI---");
-        f.close();
-      } else {
-        STDOUT.println("ERROR: INI not found");
-      }
-      LOCK_SD(false);
-      return true;
-    }
-
-    if (!strcmp(cmd, "WRITE_INI")) {
-      LOCK_SD(true);
-      if (!LSFS::Begin()) {
-        STDOUT.println("ERROR: SD mount failed");
-        LOCK_SD(false);
-        return true;
-      }
-      stream_file_ = LSFS::OpenForWrite(INI_CONFIG_FILE);
-      if (stream_file_) {
-        STDOUT.println("READY_FOR_INI");
-        streaming_mode_ = true;
-      } else {
-        STDOUT.println("ERROR: Open for write failed");
-        LOCK_SD(false);
-      }
-      return true;
-    }
-
     if (streaming_mode_) {
-       if (!strcmp(cmd, "---END_INI---")) {
-         streaming_mode_ = false;
-         if (stream_file_) {
-           stream_file_.close();
-         }
-         STDOUT.println("SAVE_OK");
-         LOCK_SD(false);
-         // Auto-reboot after 500ms to apply changes
-         // (Gives serial buffer time to clear SAVE_OK)
-         SaberBase::DoEffect(EFFECT_FORCE, 0); // Audible confirmation
-         delay(500);
-         NVIC_SystemReset();
-         return true;
-       }
-       
+      if (!strcmp(cmd, kEndIniMarker)) {
+       streaming_mode_ = false;
        if (stream_file_) {
-         size_t written = 0;
-         size_t len = strlen(cmd);
-         written += stream_file_.write((const uint8_t*)cmd, len);
-         if (arg) {
-           written += stream_file_.write((const uint8_t*)" ", 1);
-           size_t arg_len = strlen(arg);
-           written += stream_file_.write((const uint8_t*)arg, arg_len);
-         }
-         written += stream_file_.write((const uint8_t*)"\n", 1);
-         stream_file_.flush();
+         stream_file_.close();
        }
+       stream_target_file_ = nullptr;
+       STDOUT.println("SAVE_OK");
+       LOCK_SD(false);
+       // Auto-reboot after 500ms to apply changes
+       // (Gives serial buffer time to clear SAVE_OK)
+       SaberBase::DoEffect(EFFECT_FORCE, 0); // Audible confirmation
+       delay(500);
+       NVIC_SystemReset();
        return true;
+      }
+
+      if (IsIniStreamControlCommand(cmd)) {
+       AbortIniStream("ERROR: Command rejected during INI stream");
+       return true;
+      }
+
+      if (stream_file_) {
+       size_t written = 0;
+       size_t len = strlen(cmd);
+       written += stream_file_.write((const uint8_t*)cmd, len);
+       if (arg) {
+         written += stream_file_.write((const uint8_t*)" ", 1);
+         size_t arg_len = strlen(arg);
+         written += stream_file_.write((const uint8_t*)arg, arg_len);
+       }
+       written += stream_file_.write((const uint8_t*)"\n", 1);
+       stream_file_.flush();
+      }
+      return true;
+    }
+
+    if (!strcmp(cmd, kReadIniCmd)) {
+      return HandleReadIniBank(kBladeInBankArg);
+    }
+
+    if (!strcmp(cmd, kReadIniBankCmd)) {
+      return HandleReadIniBank(arg);
+    }
+
+    if (!strcmp(cmd, kWriteIniCmd)) {
+      return HandleWriteIniBank(kBladeInBankArg);
+    }
+
+    if (!strcmp(cmd, kWriteIniBankCmd)) {
+      return HandleWriteIniBank(arg);
     }
     
     return PropBase::Parse(cmd, arg);
@@ -214,6 +230,76 @@ private:
   int active_lockup_slot_;
   bool streaming_mode_ = false;
   LSFS::LSFILE stream_file_;
+  const char* stream_target_file_ = nullptr;
+
+  void AbortIniStream(const char* error_message) {
+    streaming_mode_ = false;
+    if (stream_file_) {
+      stream_file_.close();
+    }
+    stream_target_file_ = nullptr;
+    if (error_message) {
+      STDOUT.println(error_message);
+    }
+    LOCK_SD(false);
+  }
+
+  const char* ResolveIniBankFile(const char* normalized_bank_arg) const {
+    return !strcmp(normalized_bank_arg, kBladeOutBankArg) ? INI_BLADE_OUT_FILE : INI_CONFIG_FILE;
+  }
+
+  bool HandleReadIniBank(const char* arg) {
+    const char* normalized_bank_arg = NormalizeIniBankArg(arg);
+    if (!normalized_bank_arg) {
+      STDOUT.println("ERROR: Invalid INI bank");
+      return true;
+    }
+    const char* file = ResolveIniBankFile(normalized_bank_arg);
+    LOCK_SD(true);
+    LSFS::LSFILE f = LSFS::Open(file);
+    if (f) {
+      STDOUT.println(kBeginIniMarker);
+      uint8_t buf[128];
+      while (f.available()) {
+        int n = f.read(buf, sizeof(buf));
+        if (n > 0) STDOUT.write(buf, n);
+      }
+      STDOUT.println();
+      STDOUT.println(kEndIniMarker);
+      f.close();
+    } else {
+      STDOUT.println("ERROR: INI not found");
+    }
+    LOCK_SD(false);
+    return true;
+  }
+
+  bool HandleWriteIniBank(const char* arg) {
+    const char* normalized_bank_arg = NormalizeIniBankArg(arg);
+    if (!normalized_bank_arg) {
+      STDOUT.println("ERROR: Invalid INI bank");
+      return true;
+    }
+
+    LOCK_SD(true);
+    if (!LSFS::Begin()) {
+      STDOUT.println("ERROR: SD mount failed");
+      LOCK_SD(false);
+      return true;
+    }
+
+    stream_target_file_ = ResolveIniBankFile(normalized_bank_arg);
+    stream_file_ = LSFS::OpenForWrite(stream_target_file_);
+    if (stream_file_) {
+      STDOUT.println("READY_FOR_INI");
+      streaming_mode_ = true;
+    } else {
+      STDOUT.println("ERROR: Open for write failed");
+      stream_target_file_ = nullptr;
+      LOCK_SD(false);
+    }
+    return true;
+  }
 
   void LoadIniConfig(bool force = false) {
     static bool tried_loading = false;
@@ -236,9 +322,15 @@ private:
   }
 
   void LoadBladeOutConfig() {
+    blade_out_loaded_ = false;
+    if (!blade_out_config_) return;
+    blade_out_config_->SetDefaults();
+    ApplyButtonProfileDefaults(blade_out_config_);
     if (!LSFS::Exists(INI_BLADE_OUT_FILE)) return;
     if (IniLoader::Load(INI_BLADE_OUT_FILE, blade_out_config_)) {
-      CopyGlobalAndActions(*blade_in_config_, blade_out_config_);
+      if (blade_in_config_) {
+        CopyGlobalAndActions(*blade_in_config_, blade_out_config_);
+      }
       blade_out_loaded_ = true;
     }
   }
@@ -257,7 +349,10 @@ private:
 
   void SelectActiveConfigForBladeState() {
 #ifdef BLADE_DETECT_PIN
-    config_ = blade_detected_ ? blade_in_config_ : blade_out_config_;
+    const bool use_blade_out = ShouldUseBladeOutConfig(blade_detected_, blade_out_loaded_);
+    config_ = use_blade_out ? blade_out_config_ : blade_in_config_;
+#else
+    config_ = blade_in_config_;
 #endif
   }
 
@@ -310,5 +405,7 @@ private:
 
 #undef PROP_TYPE
 #define PROP_TYPE SaberIniConfig
+
+#endif  // !PROFFIE_TEST
 
 #endif // PROPS_SABER_INI_CONFIG_H

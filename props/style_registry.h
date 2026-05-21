@@ -8,6 +8,10 @@
 
 #define MAX_STYLE_STRING_LEN 640
 
+#ifndef INI_NUM_BLADES
+#define INI_NUM_BLADES 1
+#endif
+
 struct IniPreset;
 
 typedef int (*StyleBuildFn)(const IniPreset* preset, char* buf, int buf_size);
@@ -287,6 +291,82 @@ const IniStyleEntry* FindAccentStyle(const char* name) {
     }
   }
   return nullptr;
+}
+
+static void CopyBladeToLegacyView(const IniBladeStyle& blade, IniPreset* preset_view) {
+  strcpy(preset_view->style_name, blade.style_name);
+  strcpy(preset_view->base_color, blade.base_color);
+  strcpy(preset_view->alt_color, blade.alt_color);
+  strcpy(preset_view->blast_color, blade.blast_color);
+  strcpy(preset_view->clash_color, blade.clash_color);
+  strcpy(preset_view->lockup_color, blade.lockup_color);
+  strcpy(preset_view->drag_color, blade.drag_color);
+  strcpy(preset_view->lb_color, blade.lb_color);
+  strcpy(preset_view->stab_color, blade.stab_color);
+  strcpy(preset_view->swing_color, blade.swing_color);
+  strcpy(preset_view->emitter_color, blade.emitter_color);
+  strcpy(preset_view->preon_color, blade.preon_color);
+  strcpy(preset_view->off_color, blade.off_color);
+  preset_view->ignition_time = blade.ignition_time;
+  preset_view->retraction_time = blade.retraction_time;
+  preset_view->flicker_depth = blade.flicker_depth;
+  preset_view->flicker_speed = blade.flicker_speed;
+  preset_view->stripe_width = blade.stripe_width;
+  preset_view->stripe_speed = blade.stripe_speed;
+  preset_view->motion_gain = blade.motion_gain;
+  preset_view->noise_mix = blade.noise_mix;
+  preset_view->base_contrast = blade.base_contrast;
+  preset_view->pulse_rate = blade.pulse_rate;
+  preset_view->pulse_depth = blade.pulse_depth;
+  preset_view->strobe_freq = blade.strobe_freq;
+  preset_view->strobe_ms = blade.strobe_ms;
+  preset_view->drift_rate = blade.drift_rate;
+  preset_view->warm_shift = blade.warm_shift;
+  preset_view->jitter_amount = blade.jitter_amount;
+  preset_view->spark_mix = blade.spark_mix;
+  preset_view->heat_rand = blade.heat_rand;
+  preset_view->fire_cooling = blade.fire_cooling;
+  preset_view->rainbow_speed = blade.rainbow_speed;
+}
+
+static uint8_t ResolveStyleBladeCount(const RuntimeConfig* config, const IniPreset* preset) {
+  uint8_t style_blade_count = 1;
+  if (config && config->num_blades > style_blade_count) {
+    style_blade_count = config->num_blades;
+  }
+  if (preset && preset->blade_count > style_blade_count) {
+    style_blade_count = preset->blade_count;
+  }
+  if (style_blade_count > INI_NUM_BLADES) {
+    style_blade_count = INI_NUM_BLADES;
+  }
+  if (style_blade_count > INI_MAX_BLADES) {
+    style_blade_count = INI_MAX_BLADES;
+  }
+  return style_blade_count;
+}
+
+static int BuildIniStyleForBlade(const IniPreset* preset,
+                                 uint8_t blade_idx,
+                                 char* buf,
+                                 int buf_size) {
+  if (!preset || blade_idx >= INI_MAX_BLADES) {
+    return -1;
+  }
+
+  uint8_t source_blade = blade_idx;
+  if (preset->blade_count == 0 || source_blade >= preset->blade_count) {
+    source_blade = 0;
+  }
+
+  IniPreset blade_view = *preset;
+  CopyBladeToLegacyView(preset->blades[source_blade], &blade_view);
+
+  const IniStyleEntry* style = FindIniStyle(blade_view.style_name);
+  if (!style) {
+    style = &ini_style_registry[0];
+  }
+  return style->build(&blade_view, buf, buf_size);
 }
 
 #endif // PROPS_STYLE_REGISTRY_H

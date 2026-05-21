@@ -14,6 +14,10 @@
 #define SCOPED_PROFILER() do {} while (0)
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+#ifndef INI_NUM_BLADES
+#define INI_NUM_BLADES 2
+#endif
+
 uint32_t micros() { return 0; }
 uint32_t millis() { return 0; }
 int random(int x) { return x > 0 ? (rand() % x) : 0; }
@@ -37,6 +41,7 @@ char* itoa(int value, char* str, int radix) {
 
 #include "../styles/ini_style_arg_ids.h"
 #include "blade_bank_utils.h"
+#include "saber_ini_config.h"
 #define private public
 #include "ini_loader.h"
 #undef private
@@ -306,6 +311,50 @@ static void TestBaseContrastAliasAndClamps() {
   CHECK(p.off_rate_ms == 60000);
 }
 
+static void TestParsePerBladePresetKeys() {
+  IniPreset p;
+  p.SetDefaults();
+  IniLoader::ParsePreset("blade1_style", "standard", &p);
+  IniLoader::ParsePreset("blade2_style", "pulse", &p);
+  IniLoader::ParsePreset("blade2_flicker_depth", "9000", &p);
+  CHECK(strcmp(p.blades[0].style_name, "standard") == 0);
+  CHECK(strcmp(p.blades[1].style_name, "pulse") == 0);
+  CHECK(p.blades[1].flicker_depth == 9000);
+}
+
+static void TestResolveStyleBladeCount() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  IniPreset preset;
+  preset.SetDefaults();
+
+  cfg.num_blades = 2;
+  preset.blade_count = 1;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 2);
+
+  cfg.num_blades = 1;
+  preset.blade_count = 2;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 2);
+
+  cfg.num_blades = 0;
+  preset.blade_count = 0;
+  CHECK(ResolveStyleBladeCount(&cfg, &preset) == 1);
+}
+
+static void TestBuildStyleFallsBackToBladeZeroForMissingBlade() {
+  IniPreset preset;
+  preset.SetDefaults();
+  preset.blade_count = 1;
+  strcpy(preset.blades[0].style_name, "standard");
+  preset.blades[0].flicker_depth = 2345;
+
+  char blade0[1024];
+  char blade1[1024];
+  CHECK(BuildIniStyleForBlade(&preset, 0, blade0, sizeof(blade0)) > 0);
+  CHECK(BuildIniStyleForBlade(&preset, 1, blade1, sizeof(blade1)) > 0);
+  CHECK(strcmp(blade0, blade1) == 0);
+}
+
 static void TestStyleStringTruncationGuard() {
   IniPreset p;
   p.SetDefaults();
@@ -321,6 +370,35 @@ static void TestStyleStringTruncationGuard() {
 
   std::vector<char> plus_null(static_cast<size_t>(full_len + 1));
   CHECK(BuildStandard(&p, plus_null.data(), static_cast<int>(plus_null.size())) == full_len);
+}
+
+static void TestBankCommandNamesStable() {
+  CHECK(strcmp(kReadIniBankCmd, "READ_INI_BANK") == 0);
+  CHECK(strcmp(kWriteIniBankCmd, "WRITE_INI_BANK") == 0);
+}
+
+static void TestIniBankArgNormalizationValidValues() {
+  const char dynamic_blade_in[] = "blade_in";
+  const char dynamic_blade_out[] = "blade_out";
+  CHECK(NormalizeIniBankArg(dynamic_blade_in) == kBladeInBankArg);
+  CHECK(NormalizeIniBankArg(dynamic_blade_out) == kBladeOutBankArg);
+}
+
+static void TestIniBankArgNormalizationRejectsInvalidValues() {
+  CHECK(NormalizeIniBankArg(nullptr) == nullptr);
+  CHECK(NormalizeIniBankArg("") == nullptr);
+  CHECK(NormalizeIniBankArg("blade") == nullptr);
+  CHECK(NormalizeIniBankArg("BLADE_OUT") == nullptr);
+}
+
+static void TestIniStreamingControlCommandIdentification() {
+  CHECK(IsIniStreamControlCommand(kReadIniCmd));
+  CHECK(IsIniStreamControlCommand(kWriteIniCmd));
+  CHECK(IsIniStreamControlCommand(kReadIniBankCmd));
+  CHECK(IsIniStreamControlCommand(kWriteIniBankCmd));
+  CHECK(!IsIniStreamControlCommand(kEndIniMarker));
+  CHECK(!IsIniStreamControlCommand("STYLE"));
+  CHECK(!IsIniStreamControlCommand(nullptr));
 }
 
 static void TestBladeBankSelectionRules() {
@@ -385,6 +463,14 @@ static void TestIniLoadSequenceReappliesButtonDefaults() {
 
   CHECK(cfg.action_map_on[0] == ACTION_BLAST);
   CHECK(cfg.action_map_off[0] == ACTION_ON_OR_VOLUME_UP);
+}
+
+static void TestNBladeRuntimeDefaults() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+  CHECK(cfg.num_blades >= 1);
+  CHECK(cfg.presets[0].blade_count == cfg.num_blades);
+  CHECK(strcmp(cfg.presets[0].blades[0].style_name, "standard") == 0);
 }
 
 static void TestBuildSaveDirPathForPresetsFile() {
@@ -493,11 +579,19 @@ int main() {
   TestNumericArgPositionsRemainStable();
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
+  TestParsePerBladePresetKeys();
+  TestResolveStyleBladeCount();
+  TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
+  TestBankCommandNamesStable();
+  TestIniBankArgNormalizationValidValues();
+  TestIniBankArgNormalizationRejectsInvalidValues();
+  TestIniStreamingControlCommandIdentification();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();
   TestApplyButtonProfileDefaultsPopulatesPowerSlots();
   TestIniLoadSequenceReappliesButtonDefaults();
+  TestNBladeRuntimeDefaults();
   TestBuildSaveDirPathForPresetsFile();
   TestSa22cProfileDefaultsOneButton();
   TestSa22cProfileDefaultsTwoButton();

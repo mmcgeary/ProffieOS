@@ -15,6 +15,10 @@
 #define INI_MAX_FONT_PATH_LEN 64
 #define INI_MAX_TRACK_PATH_LEN 64
 
+#ifndef INI_MAX_BLADES
+#define INI_MAX_BLADES 8
+#endif
+
 #define GESTURE_TWIST_ON      (1 << 0)
 #define GESTURE_TWIST_OFF     (1 << 1)
 #define GESTURE_STAB_ON       (1 << 2)
@@ -116,12 +120,8 @@ IniAction LookupAction(const char* name) {
   return ACTION_NONE;
 }
 
-struct IniPreset {
-  char font[INI_MAX_FONT_PATH_LEN];
-  char track[INI_MAX_TRACK_PATH_LEN];
+struct IniBladeStyle {
   char style_name[INI_MAX_STYLE_NAME_LEN];
-  char name[INI_MAX_KEY_LEN];
-
   char base_color[20];
   char alt_color[20];
   char blast_color[20];
@@ -134,7 +134,89 @@ struct IniPreset {
   char emitter_color[20];
   char preon_color[20];
   char off_color[20];
+  uint16_t ignition_time;
+  uint16_t retraction_time;
+  uint16_t flicker_depth;
+  uint16_t flicker_speed;
+  uint16_t stripe_width;
+  uint16_t stripe_speed;
+  uint16_t motion_gain;
+  uint16_t noise_mix;
+  uint16_t base_contrast;
+  uint16_t pulse_rate;
+  uint16_t pulse_depth;
+  uint16_t strobe_freq;
+  uint16_t strobe_ms;
+  uint16_t drift_rate;
+  uint16_t warm_shift;
+  uint16_t jitter_amount;
+  uint16_t spark_mix;
+  uint16_t heat_rand;
+  uint16_t fire_cooling;
+  uint16_t rainbow_speed;
 
+  void SetDefaults() {
+    strcpy(style_name, "standard");
+    strcpy(base_color, "0,0,65535");
+    strcpy(alt_color, "0,65535,65535");
+    strcpy(blast_color, "65535,65535,65535");
+    strcpy(clash_color, "65535,65535,65535");
+    strcpy(lockup_color, "65535,65535,65535");
+    strcpy(drag_color, "65535,20560,0");
+    strcpy(lb_color, "0,65535,65535");
+    strcpy(stab_color, "65535,65535,65535");
+    strcpy(swing_color, "0,0,0");
+    strcpy(emitter_color, "0,0,65535");
+    strcpy(preon_color, "0,0,65535");
+    strcpy(off_color, "0,0,0");
+
+    ignition_time = 300;
+    retraction_time = 200;
+    flicker_depth = 12000;
+    flicker_speed = 1000;
+    stripe_width = 5000;
+    stripe_speed = 900;
+    motion_gain = 4096;
+    noise_mix = 8000;
+    base_contrast = 32768;
+    pulse_rate = 1200;
+    pulse_depth = 9000;
+    strobe_freq = 15;
+    strobe_ms = 1;
+    drift_rate = 600;
+    warm_shift = 2000;
+    jitter_amount = 50;
+    spark_mix = 5000;
+    heat_rand = 4500;
+    fire_cooling = 55;
+    rainbow_speed = 800;
+  }
+};
+
+struct IniPreset {
+  char font[INI_MAX_FONT_PATH_LEN];
+  char track[INI_MAX_TRACK_PATH_LEN];
+  char name[INI_MAX_KEY_LEN];
+  // Task 1 invariant:
+  // - blades[0..blade_count-1] is the canonical n-blade representation.
+  // - Legacy scalar fields below mirror blades[0] for compatibility paths.
+  uint8_t blade_count;
+  IniBladeStyle blades[INI_MAX_BLADES];
+
+  // Legacy single-blade view kept for incremental migration.
+  char style_name[INI_MAX_STYLE_NAME_LEN];
+  char base_color[20];
+  char alt_color[20];
+  char blast_color[20];
+  char clash_color[20];
+  char lockup_color[20];
+  char drag_color[20];
+  char lb_color[20];
+  char stab_color[20];
+  char swing_color[20];
+  char emitter_color[20];
+  char preon_color[20];
+  char off_color[20];
   uint16_t ignition_time;
   uint16_t retraction_time;
 
@@ -163,50 +245,65 @@ struct IniPreset {
   uint8_t off_mode;
   uint16_t off_rate_ms;
 
+  static uint8_t ClampBladeCount(uint8_t count) {
+    if (count < 1) return 1;
+    if (count > INI_MAX_BLADES) return INI_MAX_BLADES;
+    return count;
+  }
+
+  void SetBladeCountFromRuntime(uint8_t runtime_blade_count) {
+    blade_count = ClampBladeCount(runtime_blade_count);
+  }
+
+  void CopyBlade0ToLegacyView() {
+    const IniBladeStyle& blade = blades[0];
+    strcpy(style_name, blade.style_name);
+    strcpy(base_color, blade.base_color);
+    strcpy(alt_color, blade.alt_color);
+    strcpy(blast_color, blade.blast_color);
+    strcpy(clash_color, blade.clash_color);
+    strcpy(lockup_color, blade.lockup_color);
+    strcpy(drag_color, blade.drag_color);
+    strcpy(lb_color, blade.lb_color);
+    strcpy(stab_color, blade.stab_color);
+    strcpy(swing_color, blade.swing_color);
+    strcpy(emitter_color, blade.emitter_color);
+    strcpy(preon_color, blade.preon_color);
+    strcpy(off_color, blade.off_color);
+    ignition_time = blade.ignition_time;
+    retraction_time = blade.retraction_time;
+    flicker_depth = blade.flicker_depth;
+    flicker_speed = blade.flicker_speed;
+    stripe_width = blade.stripe_width;
+    stripe_speed = blade.stripe_speed;
+    motion_gain = blade.motion_gain;
+    noise_mix = blade.noise_mix;
+    base_contrast = blade.base_contrast;
+    pulse_rate = blade.pulse_rate;
+    pulse_depth = blade.pulse_depth;
+    strobe_freq = blade.strobe_freq;
+    strobe_ms = blade.strobe_ms;
+    drift_rate = blade.drift_rate;
+    warm_shift = blade.warm_shift;
+    jitter_amount = blade.jitter_amount;
+    spark_mix = blade.spark_mix;
+    heat_rand = blade.heat_rand;
+    fire_cooling = blade.fire_cooling;
+    rainbow_speed = blade.rainbow_speed;
+  }
+
   void SetDefaults() {
     strcpy(font, "font1");
     track[0] = 0;
-    strcpy(style_name, "standard");
     strcpy(name, "Default");
-
-    strcpy(base_color, "0,0,65535");
-    strcpy(alt_color, "0,65535,65535");
-    strcpy(blast_color, "65535,65535,65535");
-    strcpy(clash_color, "65535,65535,65535");
-    strcpy(lockup_color, "65535,65535,65535");
-    strcpy(drag_color, "65535,20560,0");
-    strcpy(lb_color, "0,65535,65535");
-    strcpy(stab_color, "65535,65535,65535");
-    strcpy(swing_color, "0,0,0");
-    strcpy(emitter_color, "0,0,65535");
-    strcpy(preon_color, "0,0,65535");
-    strcpy(off_color, "0,0,0");
-
-    ignition_time = 300;
-    retraction_time = 200;
+    SetBladeCountFromRuntime(1);
+    for (int i = 0; i < INI_MAX_BLADES; i++) {
+      blades[i].SetDefaults();
+    }
+    CopyBlade0ToLegacyView();
 
     accent_style[0] = 0;
     accent_speed = 1000;
-
-    flicker_depth = 12000;
-    flicker_speed = 1000;
-    stripe_width = 5000;
-    stripe_speed = 900;
-    motion_gain = 4096;
-    noise_mix = 8000;
-    base_contrast = 32768;
-    pulse_rate = 1200;
-    pulse_depth = 9000;
-    strobe_freq = 15;
-    strobe_ms = 1;
-    drift_rate = 600;
-    warm_shift = 2000;
-    jitter_amount = 50;
-    spark_mix = 5000;
-    heat_rand = 4500;
-    fire_cooling = 55;
-    rainbow_speed = 800;
-
     off_mode = OFF_MODE_PULSE;
     off_rate_ms = 1200;
   }
@@ -230,6 +327,7 @@ struct IniGlobalConfig {
 
 struct RuntimeConfig {
   IniGlobalConfig global;
+  uint8_t num_blades;
   IniPreset presets[INI_MAX_PRESETS];
   int num_presets;
 
@@ -240,8 +338,10 @@ struct RuntimeConfig {
 
   void SetDefaults() {
     global.SetDefaults();
+    num_blades = 1;
     num_presets = 1;
     presets[0].SetDefaults();
+    presets[0].SetBladeCountFromRuntime(num_blades);
     loaded = false;
 
     memset(action_map_on, 0, sizeof(action_map_on));
