@@ -6,6 +6,7 @@
 #ifndef PROPS_SABER_INI_CONFIG_H
 #define PROPS_SABER_INI_CONFIG_H
 
+#include <cstdint>
 #include <cstring>
 
 inline constexpr const char kReadIniCmd[] = "READ_INI";
@@ -30,6 +31,15 @@ inline bool IsIniStreamControlCommand(const char* cmd) {
          !strcmp(cmd, kWriteIniCmd) ||
          !strcmp(cmd, kReadIniBankCmd) ||
          !strcmp(cmd, kWriteIniBankCmd);
+}
+
+inline bool ShouldAttemptIniLoad(bool force,
+                                 bool ini_loaded,
+                                 uint32_t now_ms,
+                                 uint32_t next_attempt_ms) {
+  if (force) return true;
+  if (ini_loaded) return false;
+  return static_cast<int32_t>(now_ms - next_attempt_ms) >= 0;
 }
 
 #ifndef PROFFIE_TEST
@@ -229,6 +239,7 @@ private:
   bool swing_blast_ = false;
   int active_lockup_slot_;
   bool streaming_mode_ = false;
+  uint32_t next_ini_load_attempt_ms_ = 0;
   LSFS::LSFILE stream_file_;
   const char* stream_target_file_ = nullptr;
 
@@ -302,18 +313,30 @@ private:
   }
 
   void LoadIniConfig(bool force = false) {
-    static bool tried_loading = false;
-    if (tried_loading && !force) return;
-    tried_loading = true;
+    const uint32_t now = millis();
+    if (!ShouldAttemptIniLoad(force, ini_loaded_, now, next_ini_load_attempt_ms_)) return;
+    next_ini_load_attempt_ms_ = now + 1000;
     STDOUT.println("SaberIni: Loading...");
     if (!blade_in_config_) return;
-    if (!LSFS::Exists(INI_CONFIG_FILE)) { STDOUT.println("SaberIni: INI missing"); ini_loaded_ = false; return; }
+
+    LOCK_SD(true);
+    if (!LSFS::Exists(INI_CONFIG_FILE)) {
+      LOCK_SD(false);
+      STDOUT.println("SaberIni: INI missing");
+      ini_loaded_ = false;
+      return;
+    }
+
     blade_in_config_->SetDefaults();
     ApplyButtonProfileDefaults(blade_in_config_);
-    if (IniLoader::Load(INI_CONFIG_FILE, blade_in_config_)) {
+    const bool loaded = IniLoader::Load(INI_CONFIG_FILE, blade_in_config_);
+    LOCK_SD(false);
+
+    if (loaded) {
       ApplyGlobalConfig();
       RegeneratePresetBanks();
       ini_loaded_ = true;
+      next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
     } else {
       STDOUT.println("SaberIni: LOAD_FAIL");
@@ -324,15 +347,21 @@ private:
   void LoadBladeOutConfig() {
     blade_out_loaded_ = false;
     if (!blade_out_config_) return;
+
+    LOCK_SD(true);
     blade_out_config_->SetDefaults();
     ApplyButtonProfileDefaults(blade_out_config_);
-    if (!LSFS::Exists(INI_BLADE_OUT_FILE)) return;
+    if (!LSFS::Exists(INI_BLADE_OUT_FILE)) {
+      LOCK_SD(false);
+      return;
+    }
     if (IniLoader::Load(INI_BLADE_OUT_FILE, blade_out_config_)) {
       if (blade_in_config_) {
         CopyGlobalAndActions(*blade_in_config_, blade_out_config_);
       }
       blade_out_loaded_ = true;
     }
+    LOCK_SD(false);
   }
 
   void RegeneratePresetBanks() {

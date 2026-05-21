@@ -573,6 +573,15 @@ static void TestGestureFlagsNeedOffMotion() {
   CHECK(!GestureFlagsNeedOffMotion(GESTURE_MELT));
 }
 
+static void TestIniLoadRetryPolicyAllowsRecoveryAttempts() {
+  CHECK(ShouldAttemptIniLoad(false, false, 3000, 0));
+  CHECK(!ShouldAttemptIniLoad(false, false, 3500, 4000));
+  CHECK(ShouldAttemptIniLoad(false, false, 4000, 4000));
+  CHECK(ShouldAttemptIniLoad(false, false, 4500, 4000));
+  CHECK(!ShouldAttemptIniLoad(false, true, 5000, 0));
+  CHECK(ShouldAttemptIniLoad(true, true, 0, UINT32_MAX));
+}
+
 int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
@@ -598,5 +607,6 @@ int main() {
   TestSa22cProfileDefaultsThreeButton();
   TestResolveButtonSlotSa22cEvents();
   TestGestureFlagsNeedOffMotion();
+  TestIniLoadRetryPolicyAllowsRecoveryAttempts();
   return 0;
 }
