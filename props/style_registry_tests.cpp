@@ -377,6 +377,30 @@ static void TestBankCommandNamesStable() {
   CHECK(strcmp(kWriteIniBankCmd, "WRITE_INI_BANK") == 0);
 }
 
+static void TestIniBankArgNormalizationValidValues() {
+  const char dynamic_blade_in[] = "blade_in";
+  const char dynamic_blade_out[] = "blade_out";
+  CHECK(NormalizeIniBankArg(dynamic_blade_in) == kBladeInBankArg);
+  CHECK(NormalizeIniBankArg(dynamic_blade_out) == kBladeOutBankArg);
+}
+
+static void TestIniBankArgNormalizationRejectsInvalidValues() {
+  CHECK(NormalizeIniBankArg(nullptr) == nullptr);
+  CHECK(NormalizeIniBankArg("") == nullptr);
+  CHECK(NormalizeIniBankArg("blade") == nullptr);
+  CHECK(NormalizeIniBankArg("BLADE_OUT") == nullptr);
+}
+
+static void TestIniStreamingControlCommandIdentification() {
+  CHECK(IsIniStreamControlCommand(kReadIniCmd));
+  CHECK(IsIniStreamControlCommand(kWriteIniCmd));
+  CHECK(IsIniStreamControlCommand(kReadIniBankCmd));
+  CHECK(IsIniStreamControlCommand(kWriteIniBankCmd));
+  CHECK(!IsIniStreamControlCommand(kEndIniMarker));
+  CHECK(!IsIniStreamControlCommand("STYLE"));
+  CHECK(!IsIniStreamControlCommand(nullptr));
+}
+
 static void TestBladeBankSelectionRules() {
   CHECK(ShouldUseBladeOutConfig(false, true));
   CHECK(!ShouldUseBladeOutConfig(true, true));
@@ -560,6 +584,9 @@ int main() {
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
   TestBankCommandNamesStable();
+  TestIniBankArgNormalizationValidValues();
+  TestIniBankArgNormalizationRejectsInvalidValues();
+  TestIniStreamingControlCommandIdentification();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();
   TestApplyButtonProfileDefaultsPopulatesPowerSlots();

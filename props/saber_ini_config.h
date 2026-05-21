@@ -6,6 +6,8 @@
 #ifndef PROPS_SABER_INI_CONFIG_H
 #define PROPS_SABER_INI_CONFIG_H
 
+#include <cstring>
+
 inline constexpr const char kReadIniCmd[] = "READ_INI";
 inline constexpr const char kWriteIniCmd[] = "WRITE_INI";
 inline constexpr const char kReadIniBankCmd[] = "READ_INI_BANK";
@@ -14,6 +16,21 @@ inline constexpr const char kBladeInBankArg[] = "blade_in";
 inline constexpr const char kBladeOutBankArg[] = "blade_out";
 inline constexpr const char kBeginIniMarker[] = "---BEGIN_INI---";
 inline constexpr const char kEndIniMarker[] = "---END_INI---";
+
+inline const char* NormalizeIniBankArg(const char* arg) {
+  if (!arg || !arg[0]) return nullptr;
+  if (!strcmp(arg, kBladeInBankArg)) return kBladeInBankArg;
+  if (!strcmp(arg, kBladeOutBankArg)) return kBladeOutBankArg;
+  return nullptr;
+}
+
+inline bool IsIniStreamControlCommand(const char* cmd) {
+  if (!cmd) return false;
+  return !strcmp(cmd, kReadIniCmd) ||
+         !strcmp(cmd, kWriteIniCmd) ||
+         !strcmp(cmd, kReadIniBankCmd) ||
+         !strcmp(cmd, kWriteIniBankCmd);
+}
 
 #ifndef PROFFIE_TEST
 
@@ -78,22 +95,6 @@ public:
   }
 
   bool Parse(const char* cmd, const char* arg) override {
-    if (!strcmp(cmd, kReadIniCmd)) {
-      return HandleReadIniBank(kBladeInBankArg);
-    }
-
-    if (!strcmp(cmd, kReadIniBankCmd)) {
-      return HandleReadIniBank(arg);
-    }
-
-    if (!strcmp(cmd, kWriteIniCmd)) {
-      return HandleWriteIniBank(kBladeInBankArg);
-    }
-
-    if (!strcmp(cmd, kWriteIniBankCmd)) {
-      return HandleWriteIniBank(arg);
-    }
-
     if (streaming_mode_) {
       if (!strcmp(cmd, kEndIniMarker)) {
        streaming_mode_ = false;
@@ -111,6 +112,11 @@ public:
        return true;
       }
 
+      if (IsIniStreamControlCommand(cmd)) {
+       AbortIniStream("ERROR: Command rejected during INI stream");
+       return true;
+      }
+
       if (stream_file_) {
        size_t written = 0;
        size_t len = strlen(cmd);
@@ -124,6 +130,22 @@ public:
        stream_file_.flush();
       }
       return true;
+    }
+
+    if (!strcmp(cmd, kReadIniCmd)) {
+      return HandleReadIniBank(kBladeInBankArg);
+    }
+
+    if (!strcmp(cmd, kReadIniBankCmd)) {
+      return HandleReadIniBank(arg);
+    }
+
+    if (!strcmp(cmd, kWriteIniCmd)) {
+      return HandleWriteIniBank(kBladeInBankArg);
+    }
+
+    if (!strcmp(cmd, kWriteIniBankCmd)) {
+      return HandleWriteIniBank(arg);
     }
     
     return PropBase::Parse(cmd, arg);
@@ -210,13 +232,29 @@ private:
   LSFS::LSFILE stream_file_;
   const char* stream_target_file_ = nullptr;
 
-  const char* ResolveIniBankFile(const char* arg) const {
-    const char* target = arg ? arg : kBladeInBankArg;
-    return !strcmp(target, kBladeOutBankArg) ? INI_BLADE_OUT_FILE : INI_CONFIG_FILE;
+  void AbortIniStream(const char* error_message) {
+    streaming_mode_ = false;
+    if (stream_file_) {
+      stream_file_.close();
+    }
+    stream_target_file_ = nullptr;
+    if (error_message) {
+      STDOUT.println(error_message);
+    }
+    LOCK_SD(false);
+  }
+
+  const char* ResolveIniBankFile(const char* normalized_bank_arg) const {
+    return !strcmp(normalized_bank_arg, kBladeOutBankArg) ? INI_BLADE_OUT_FILE : INI_CONFIG_FILE;
   }
 
   bool HandleReadIniBank(const char* arg) {
-    const char* file = ResolveIniBankFile(arg);
+    const char* normalized_bank_arg = NormalizeIniBankArg(arg);
+    if (!normalized_bank_arg) {
+      STDOUT.println("ERROR: Invalid INI bank");
+      return true;
+    }
+    const char* file = ResolveIniBankFile(normalized_bank_arg);
     LOCK_SD(true);
     LSFS::LSFILE f = LSFS::Open(file);
     if (f) {
@@ -237,6 +275,12 @@ private:
   }
 
   bool HandleWriteIniBank(const char* arg) {
+    const char* normalized_bank_arg = NormalizeIniBankArg(arg);
+    if (!normalized_bank_arg) {
+      STDOUT.println("ERROR: Invalid INI bank");
+      return true;
+    }
+
     LOCK_SD(true);
     if (!LSFS::Begin()) {
       STDOUT.println("ERROR: SD mount failed");
@@ -244,7 +288,7 @@ private:
       return true;
     }
 
-    stream_target_file_ = ResolveIniBankFile(arg);
+    stream_target_file_ = ResolveIniBankFile(normalized_bank_arg);
     stream_file_ = LSFS::OpenForWrite(stream_target_file_);
     if (stream_file_) {
       STDOUT.println("READY_FOR_INI");
