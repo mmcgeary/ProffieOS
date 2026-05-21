@@ -41,6 +41,7 @@ char* itoa(int value, char* str, int radix) {
 
 #include "../styles/ini_style_arg_ids.h"
 #include "blade_bank_utils.h"
+#include "saber_ini_config.h"
 #define private public
 #include "ini_loader.h"
 #undef private
@@ -371,6 +372,11 @@ static void TestStyleStringTruncationGuard() {
   CHECK(BuildStandard(&p, plus_null.data(), static_cast<int>(plus_null.size())) == full_len);
 }
 
+static void TestBankCommandNamesStable() {
+  CHECK(strcmp(kReadIniBankCmd, "READ_INI_BANK") == 0);
+  CHECK(strcmp(kWriteIniBankCmd, "WRITE_INI_BANK") == 0);
+}
+
 static void TestBladeBankSelectionRules() {
   CHECK(ShouldUseBladeOutConfig(false, true));
   CHECK(!ShouldUseBladeOutConfig(true, true));
@@ -553,6 +559,7 @@ int main() {
   TestResolveStyleBladeCount();
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
+  TestBankCommandNamesStable();
   TestBladeBankSelectionRules();
   TestCopyGlobalAndActionsPreservesSourceValues();
   TestApplyButtonProfileDefaultsPopulatesPowerSlots();
