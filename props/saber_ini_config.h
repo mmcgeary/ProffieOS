@@ -33,10 +33,20 @@ inline bool IsIniStreamControlCommand(const char* cmd) {
          !strcmp(cmd, kWriteIniBankCmd);
 }
 
+inline bool ShouldAllocateBladeOutConfig() {
+#ifdef BLADE_DETECT_PIN
+  return true;
+#else
+  return false;
+#endif
+}
+
 inline bool ShouldAttemptIniLoad(bool force,
                                  bool ini_loaded,
+                                 bool has_runtime_config,
                                  uint32_t now_ms,
                                  uint32_t next_attempt_ms) {
+  if (!has_runtime_config) return false;
   if (force) return true;
   if (ini_loaded) return false;
   return static_cast<int32_t>(now_ms - next_attempt_ms) >= 0;
@@ -76,14 +86,18 @@ public:
   void Setup() override {
     PropBase::Setup();
     blade_in_config_ = new RuntimeConfig();
-    blade_out_config_ = new RuntimeConfig();
+    blade_out_config_ = ShouldAllocateBladeOutConfig() ? new RuntimeConfig() : nullptr;
     if (blade_in_config_) {
       blade_in_config_->SetDefaults();
       ApplyButtonProfileDefaults(blade_in_config_);
+    } else {
+      STDOUT.println("SaberIni: Runtime config allocation failed (blade_in).");
     }
     if (blade_out_config_) {
       blade_out_config_->SetDefaults();
       ApplyButtonProfileDefaults(blade_out_config_);
+    } else if (ShouldAllocateBladeOutConfig()) {
+      STDOUT.println("SaberIni: Runtime config allocation failed (blade_out).");
     }
     config_ = blade_in_config_;
     LoadIniConfig();
@@ -314,7 +328,7 @@ private:
 
   void LoadIniConfig(bool force = false) {
     const uint32_t now = millis();
-    if (!ShouldAttemptIniLoad(force, ini_loaded_, now, next_ini_load_attempt_ms_)) return;
+    if (!ShouldAttemptIniLoad(force, ini_loaded_, blade_in_config_ != nullptr, now, next_ini_load_attempt_ms_)) return;
     next_ini_load_attempt_ms_ = now + 1000;
     STDOUT.println("SaberIni: Loading...");
     if (!blade_in_config_) return;

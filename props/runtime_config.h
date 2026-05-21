@@ -8,7 +8,9 @@
 #define INI_MAX_KEY_LEN 32
 #endif
 
+#ifndef INI_MAX_PRESETS
 #define INI_MAX_PRESETS 20
+#endif
 
 #define INI_MAX_SLOTS 34
 #define INI_MAX_STYLE_NAME_LEN 24
@@ -16,7 +18,11 @@
 #define INI_MAX_TRACK_PATH_LEN 64
 
 #ifndef INI_MAX_BLADES
+#ifdef INI_NUM_BLADES
+#define INI_MAX_BLADES INI_NUM_BLADES
+#else
 #define INI_MAX_BLADES 8
+#endif
 #endif
 
 #define GESTURE_TWIST_ON      (1 << 0)

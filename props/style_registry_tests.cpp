@@ -466,6 +466,7 @@ static void TestIniLoadSequenceReappliesButtonDefaults() {
 }
 
 static void TestNBladeRuntimeDefaults() {
+  CHECK(INI_MAX_BLADES == INI_NUM_BLADES);
   RuntimeConfig cfg;
   cfg.SetDefaults();
   CHECK(cfg.num_blades >= 1);
@@ -574,12 +575,18 @@ static void TestGestureFlagsNeedOffMotion() {
 }
 
 static void TestIniLoadRetryPolicyAllowsRecoveryAttempts() {
-  CHECK(ShouldAttemptIniLoad(false, false, 3000, 0));
-  CHECK(!ShouldAttemptIniLoad(false, false, 3500, 4000));
-  CHECK(ShouldAttemptIniLoad(false, false, 4000, 4000));
-  CHECK(ShouldAttemptIniLoad(false, false, 4500, 4000));
-  CHECK(!ShouldAttemptIniLoad(false, true, 5000, 0));
-  CHECK(ShouldAttemptIniLoad(true, true, 0, UINT32_MAX));
+  CHECK(ShouldAttemptIniLoad(false, false, true, 3000, 0));
+  CHECK(!ShouldAttemptIniLoad(false, false, true, 3500, 4000));
+  CHECK(ShouldAttemptIniLoad(false, false, true, 4000, 4000));
+  CHECK(ShouldAttemptIniLoad(false, false, true, 4500, 4000));
+  CHECK(!ShouldAttemptIniLoad(false, true, true, 5000, 0));
+  CHECK(ShouldAttemptIniLoad(true, true, true, 0, UINT32_MAX));
+  CHECK(!ShouldAttemptIniLoad(false, false, false, 6000, 0));
+  CHECK(!ShouldAttemptIniLoad(true, false, false, 6000, 0));
+}
+
+static void TestBladeOutAllocationPolicy() {
+  CHECK(!ShouldAllocateBladeOutConfig());
 }
 
 int main() {
@@ -608,5 +615,6 @@ int main() {
   TestResolveButtonSlotSa22cEvents();
   TestGestureFlagsNeedOffMotion();
   TestIniLoadRetryPolicyAllowsRecoveryAttempts();
+  TestBladeOutAllocationPolicy();
   return 0;
 }
