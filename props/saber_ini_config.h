@@ -6,6 +6,7 @@
 #ifndef PROPS_SABER_INI_CONFIG_H
 #define PROPS_SABER_INI_CONFIG_H
 
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 
@@ -13,10 +14,32 @@ inline constexpr const char kReadIniCmd[] = "READ_INI";
 inline constexpr const char kWriteIniCmd[] = "WRITE_INI";
 inline constexpr const char kReadIniBankCmd[] = "READ_INI_BANK";
 inline constexpr const char kWriteIniBankCmd[] = "WRITE_INI_BANK";
+inline constexpr const char kGetHardwareProfileCmd[] = "GET_HW_PROFILE";
 inline constexpr const char kBladeInBankArg[] = "blade_in";
 inline constexpr const char kBladeOutBankArg[] = "blade_out";
 inline constexpr const char kBeginIniMarker[] = "---BEGIN_INI---";
 inline constexpr const char kEndIniMarker[] = "---END_INI---";
+inline constexpr uint32_t kIniLoadRetryDisabled = UINT32_MAX;
+
+inline int NormalizeHardwareCountForProfile(int value) {
+  return value > 0 ? value : 1;
+}
+
+inline void BuildHardwareProfileLine(int num_blades,
+                                     int num_buttons,
+                                     bool has_blade_detect,
+                                     bool blade_detected,
+                                     char* out,
+                                     size_t out_size) {
+  if (!out || out_size == 0) return;
+  snprintf(out,
+           out_size,
+           "HW_PROFILE num_blades=%d num_buttons=%d has_blade_detect=%d blade_detect=%d",
+           NormalizeHardwareCountForProfile(num_blades),
+           NormalizeHardwareCountForProfile(num_buttons),
+           has_blade_detect ? 1 : 0,
+           blade_detected ? 1 : 0);
+}
 
 inline const char* NormalizeIniBankArg(const char* arg) {
   if (!arg || !arg[0]) return nullptr;
@@ -49,6 +72,7 @@ inline bool ShouldAttemptIniLoad(bool force,
   if (!has_runtime_config) return false;
   if (force) return true;
   if (ini_loaded) return false;
+  if (next_attempt_ms == kIniLoadRetryDisabled) return false;
   return static_cast<int32_t>(now_ms - next_attempt_ms) >= 0;
 }
 
@@ -170,6 +194,24 @@ public:
 
     if (!strcmp(cmd, kWriteIniBankCmd)) {
       return HandleWriteIniBank(arg);
+    }
+
+    if (!strcmp(cmd, kGetHardwareProfileCmd)) {
+      RuntimeConfig* profile_cfg = blade_in_config_ ? blade_in_config_ : config_;
+      const int num_blades = profile_cfg ? profile_cfg->num_blades : 1;
+      const int num_buttons = profile_cfg ? profile_cfg->global.num_buttons : 1;
+#ifdef BLADE_DETECT_PIN
+      constexpr bool has_blade_detect = true;
+      const bool blade_detected = blade_detected_;
+#else
+      constexpr bool has_blade_detect = false;
+      constexpr bool blade_detected = false;
+#endif
+      char profile_line[160];
+      BuildHardwareProfileLine(
+          num_blades, num_buttons, has_blade_detect, blade_detected, profile_line, sizeof(profile_line));
+      STDOUT.println(profile_line);
+      return true;
     }
     
     return PropBase::Parse(cmd, arg);
@@ -338,6 +380,7 @@ private:
       LOCK_SD(false);
       STDOUT.println("SaberIni: INI missing");
       ini_loaded_ = false;
+      next_ini_load_attempt_ms_ = kIniLoadRetryDisabled;
       return;
     }
 
