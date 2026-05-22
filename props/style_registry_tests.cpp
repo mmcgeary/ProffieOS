@@ -375,6 +375,16 @@ static void TestStyleStringTruncationGuard() {
 static void TestBankCommandNamesStable() {
   CHECK(strcmp(kReadIniBankCmd, "READ_INI_BANK") == 0);
   CHECK(strcmp(kWriteIniBankCmd, "WRITE_INI_BANK") == 0);
+  CHECK(strcmp(kGetHardwareProfileCmd, "GET_HW_PROFILE") == 0);
+}
+
+static void TestHardwareProfileLineContract() {
+  char line[160];
+  BuildHardwareProfileLine(1, 2, true, false, line, sizeof(line));
+  CHECK(strcmp(line, "HW_PROFILE num_blades=1 num_buttons=2 has_blade_detect=1 blade_detect=0") == 0);
+
+  BuildHardwareProfileLine(3, 1, false, false, line, sizeof(line));
+  CHECK(strcmp(line, "HW_PROFILE num_blades=3 num_buttons=1 has_blade_detect=0 blade_detect=0") == 0);
 }
 
 static void TestIniBankArgNormalizationValidValues() {
@@ -583,6 +593,8 @@ static void TestIniLoadRetryPolicyAllowsRecoveryAttempts() {
   CHECK(ShouldAttemptIniLoad(true, true, true, 0, UINT32_MAX));
   CHECK(!ShouldAttemptIniLoad(false, false, false, 6000, 0));
   CHECK(!ShouldAttemptIniLoad(true, false, false, 6000, 0));
+  CHECK(!ShouldAttemptIniLoad(false, false, true, 7000, kIniLoadRetryDisabled));
+  CHECK(ShouldAttemptIniLoad(true, false, true, 7000, kIniLoadRetryDisabled));
 }
 
 static void TestBladeOutAllocationPolicy() {
@@ -600,6 +612,7 @@ int main() {
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
   TestBankCommandNamesStable();
+  TestHardwareProfileLineContract();
   TestIniBankArgNormalizationValidValues();
   TestIniBankArgNormalizationRejectsInvalidValues();
   TestIniStreamingControlCommandIdentification();
