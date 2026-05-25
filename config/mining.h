@@ -10,11 +10,6 @@ const unsigned int maxLedsPerStrip = 144;
 #define ENABLE_WS2811
 #define ENABLE_SD
 #define NO_REPEAT_RANDOM
-#define INI_NUM_BLADES NUM_BLADES
-#endif
-
-#ifdef CONFIG_PROP
-#include "../props/saber_ini_config.h"
 #endif
 
 #ifdef CONFIG_PRESETS

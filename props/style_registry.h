@@ -26,6 +26,20 @@ static unsigned int BuildOffModeSelector(const IniPreset* p) {
   return (p->off_mode == OFF_MODE_RANDOM) ? 2u : 1u;
 }
 
+static unsigned int PulseMillisToRpm(unsigned int pulse_millis) {
+  if (pulse_millis == 0u) pulse_millis = 1u;
+  const unsigned int pulse_rpm = 60000u / pulse_millis;
+  return (pulse_rpm > 0u) ? pulse_rpm : 1u;
+}
+
+static unsigned int BuildOffRateArg(const IniPreset* p) {
+  const unsigned int off_rate_ms = (p->off_rate_ms > 0u) ? p->off_rate_ms : 1u;
+  if (p->off_mode == OFF_MODE_RANDOM) {
+    return off_rate_ms;
+  }
+  return PulseMillisToRpm(off_rate_ms);
+}
+
 static int BuildStyleString(char* buf, int buf_size, const char* format, ...) {
   if (!buf || buf_size <= 0) return -1;
 
@@ -78,7 +92,10 @@ static int AppendIniTuningArgs(char* buf, int buf_size, int written, const IniPr
   if (written < 0 || written >= buf_size) return -1;
   const int count = sizeof(kIniTuningArgDefs) / sizeof(kIniTuningArgDefs[0]);
   for (int i = 0; i < count; i++) {
-    const unsigned int value = static_cast<unsigned int>(p->*(kIniTuningArgDefs[i].member));
+    unsigned int value = static_cast<unsigned int>(p->*(kIniTuningArgDefs[i].member));
+    if (kIniTuningArgDefs[i].arg_id == ini_style_args::kFlickerSpeedArg) {
+      value = PulseMillisToRpm(value);
+    }
     const int appended = snprintf(buf + written, buf_size - written, " %u", value);
     if (appended < 0 || appended >= buf_size - written) {
       buf[buf_size - 1] = '\0';
@@ -103,7 +120,7 @@ static int BuildIniStyleWithStringArgs(const char* parser_name,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), p->off_rate_ms);
+    BuildOffModeSelector(p), BuildOffRateArg(p));
   return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
@@ -121,7 +138,7 @@ static int BuildIniStyleWithNumericArg34(const char* parser_name,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), p->off_rate_ms);
+    BuildOffModeSelector(p), BuildOffRateArg(p));
   return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
@@ -139,7 +156,7 @@ static int BuildIniStyleWithStringArg3NumericArg4(const char* parser_name,
     p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
     p->drag_color, p->stab_color, p->emitter_color,
     p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), p->off_rate_ms);
+    BuildOffModeSelector(p), BuildOffRateArg(p));
   return AppendIniTuningArgs(buf, buf_size, written, p);
 }
 
@@ -177,7 +194,7 @@ static int BuildStrobe(const IniPreset* p, char* buf, int buf_size) {
 
 static int BuildPulse(const IniPreset* p, char* buf, int buf_size) {
   return BuildIniStyleWithNumericArg34("ini_pulse", p, buf, buf_size,
-    p->base_color, p->alt_color, p->pulse_rate, p->pulse_depth);
+    p->base_color, p->alt_color, PulseMillisToRpm(p->pulse_rate), p->pulse_depth);
 }
 
 static int BuildRotoscope(const IniPreset* p, char* buf, int buf_size) {

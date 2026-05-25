@@ -25,6 +25,41 @@
 #endif
 #endif
 
+#ifndef INI_DEFAULT_NUM_BLADES
+#ifdef INI_NUM_BLADES
+#define INI_DEFAULT_NUM_BLADES INI_NUM_BLADES
+#elif defined(NUM_BLADES)
+#define INI_DEFAULT_NUM_BLADES NUM_BLADES
+#else
+#define INI_DEFAULT_NUM_BLADES 1
+#endif
+#endif
+
+#ifndef INI_DEFAULT_NUM_BUTTONS
+#ifdef NUM_BUTTONS
+#define INI_DEFAULT_NUM_BUTTONS NUM_BUTTONS
+#else
+#define INI_DEFAULT_NUM_BUTTONS 2
+#endif
+#endif
+
+inline uint8_t ClampRuntimeButtonCount(int count) {
+  if (count < 1) return 1;
+  if (count > 3) return 3;
+  return static_cast<uint8_t>(count);
+}
+
+inline uint8_t ResolveRuntimeDefaultBladeCount() {
+  int count = INI_DEFAULT_NUM_BLADES;
+  if (count < 1) count = 1;
+  if (count > INI_MAX_BLADES) count = INI_MAX_BLADES;
+  return static_cast<uint8_t>(count);
+}
+
+inline uint8_t ResolveRuntimeDefaultButtonCount() {
+  return ClampRuntimeButtonCount(INI_DEFAULT_NUM_BUTTONS);
+}
+
 #define GESTURE_TWIST_ON      (1 << 0)
 #define GESTURE_TWIST_OFF     (1 << 1)
 #define GESTURE_STAB_ON       (1 << 2)
@@ -302,7 +337,7 @@ struct IniPreset {
     strcpy(font, "font1");
     track[0] = 0;
     strcpy(name, "Default");
-    SetBladeCountFromRuntime(1);
+    SetBladeCountFromRuntime(ResolveRuntimeDefaultBladeCount());
     for (int i = 0; i < INI_MAX_BLADES; i++) {
       blades[i].SetDefaults();
     }
@@ -326,7 +361,7 @@ struct IniGlobalConfig {
     volume = 80;
     clash_threshold = 8;
     gesture_flags = GESTURE_TWIST_ON | GESTURE_TWIST_OFF;
-    num_buttons = 2;
+    num_buttons = ResolveRuntimeDefaultButtonCount();
     strcpy(button_profile, "default");
   }
 };
@@ -344,7 +379,7 @@ struct RuntimeConfig {
 
   void SetDefaults() {
     global.SetDefaults();
-    num_blades = 1;
+    num_blades = ResolveRuntimeDefaultBladeCount();
     num_presets = 1;
     presets[0].SetDefaults();
     presets[0].SetBladeCountFromRuntime(num_blades);

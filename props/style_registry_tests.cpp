@@ -99,6 +99,13 @@ static std::string AsString(unsigned int value) {
   return std::to_string(value);
 }
 
+static std::string AsPulseRpmFromMillis(unsigned int pulse_millis) {
+  if (pulse_millis == 0u) pulse_millis = 1u;
+  unsigned int pulse_rpm = 60000u / pulse_millis;
+  if (pulse_rpm == 0u) pulse_rpm = 1u;
+  return std::to_string(pulse_rpm);
+}
+
 static void TestArgIndexConstants() {
   static_assert(ini_style_args::kBaseColorArg == 1, "base color arg index changed");
   static_assert(ini_style_args::kAltColorArg == 2, "alt color arg index changed");
@@ -161,7 +168,7 @@ static void CheckSharedArgs(const std::vector<std::string>& tokens, const IniPre
   CheckTokenEq(tokens, ini_style_args::kOffRateMsArg, AsString(p.off_rate_ms).c_str());
 
   CheckTokenEq(tokens, ini_style_args::kFlickerDepthArg, AsString(p.flicker_depth).c_str());
-  CheckTokenEq(tokens, ini_style_args::kFlickerSpeedArg, AsString(p.flicker_speed).c_str());
+  CheckTokenEq(tokens, ini_style_args::kFlickerSpeedArg, AsPulseRpmFromMillis(p.flicker_speed).c_str());
   CheckTokenEq(tokens, ini_style_args::kStripeWidthArg, AsString(p.stripe_width).c_str());
   CheckTokenEq(tokens, ini_style_args::kStripeSpeedArg, AsString(p.stripe_speed).c_str());
   CheckTokenEq(tokens, ini_style_args::kMotionGainArg, AsString(p.motion_gain).c_str());
@@ -207,6 +214,45 @@ static void TestNumericArgPositionsRemainStable() {
   CheckSharedArgs(tokens, p);
 }
 
+static void TestOffModeRateUnitContract() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.off_rate_ms = 1200;
+
+  char buf[1024];
+
+  p.off_mode = OFF_MODE_RANDOM;
+  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  const auto random_tokens = SplitTokens(buf);
+  CheckTokenEq(random_tokens, ini_style_args::kOffModeArg, "2");
+  CheckTokenEq(random_tokens, ini_style_args::kOffRateMsArg, "1200");
+
+  p.off_mode = OFF_MODE_PULSE;
+  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  const auto pulse_tokens = SplitTokens(buf);
+  CheckTokenEq(pulse_tokens, ini_style_args::kOffModeArg, "1");
+  CheckTokenEq(pulse_tokens, ini_style_args::kOffRateMsArg, "50");
+}
+
+static void TestOnModeRateUnitContract() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.flicker_speed = 1200;
+  p.pulse_rate = 1200;
+
+  char buf[1024];
+
+  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  const auto standard_tokens = SplitTokens(buf);
+  CheckTokenEq(standard_tokens, ini_style_args::kFlickerSpeedArg, "50");
+
+  CHECK(BuildPulse(&p, buf, sizeof(buf)) > 0);
+  const auto pulse_tokens = SplitTokens(buf);
+  CheckTokenEq(pulse_tokens, ini_style_args::kArg3, "50");
+}
+
 static void CheckArg1234ByStyleName(const char* style_name,
                                     const std::vector<std::string>& tokens,
                                     const IniPreset& p) {
@@ -219,7 +265,7 @@ static void CheckArg1234ByStyleName(const char* style_name,
     return;
   }
   if (!strcmp(style_name, "pulse")) {
-    CheckTokenEq(tokens, ini_style_args::kArg3, AsString(p.pulse_rate).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg3, AsPulseRpmFromMillis(p.pulse_rate).c_str());
     CheckTokenEq(tokens, ini_style_args::kArg4, AsString(p.pulse_depth).c_str());
     return;
   }
@@ -479,8 +525,9 @@ static void TestNBladeRuntimeDefaults() {
   CHECK(INI_MAX_BLADES == INI_NUM_BLADES);
   RuntimeConfig cfg;
   cfg.SetDefaults();
-  CHECK(cfg.num_blades >= 1);
-  CHECK(cfg.presets[0].blade_count == cfg.num_blades);
+  CHECK(cfg.num_blades == INI_NUM_BLADES);
+  CHECK(cfg.presets[0].blade_count == INI_NUM_BLADES);
+  CHECK(cfg.global.num_buttons == ClampRuntimeButtonCount(INI_DEFAULT_NUM_BUTTONS));
   CHECK(strcmp(cfg.presets[0].blades[0].style_name, "standard") == 0);
 }
 
@@ -605,6 +652,8 @@ int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
   TestNumericArgPositionsRemainStable();
+  TestOffModeRateUnitContract();
+  TestOnModeRateUnitContract();
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
   TestParsePerBladePresetKeys();
