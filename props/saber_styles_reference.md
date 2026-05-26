@@ -97,6 +97,9 @@ These keys are parsed directly by the firmware INI loader (`ParseBladeField` /
 > `retraction_delay`, `retraction_cool_down`, `lockup_position`, `drag_size`,
 > `melt_size`, `emitter_size`, `preon_size`, and all `*_option` keys are
 > **not** hardcoded. They must be set via `bladeN_param.<name>` (see below).
+> Additional `audioflicker` option-family keys (`style_option2`,
+> `style_option3`, `ignition_option2`, `retraction_option2`) are documented in
+> [Additional Params for `audioflicker`](#additional-params-for-audioflicker).
 
 ## Schema Parameters (`bladeN_param.<name>`)
 
