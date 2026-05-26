@@ -4,6 +4,7 @@
 
 #include "ini_tuning_arg_table.h"
 #include "runtime_config.h"
+#include "generated_style_schema.h"
 #include <stdarg.h>
 
 #define MAX_STYLE_STRING_LEN 640
@@ -237,6 +238,11 @@ static int BuildAncient(const IniPreset* p, char* buf, int buf_size) {
     p->base_color, p->alt_color, p->swing_color, p->clash_color);
 }
 
+static int BuildAudioFlicker(const IniPreset* p, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_audioflicker", p, buf, buf_size,
+    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+}
+
 // --- Accent/Crystal Blade Styles ---
 
 static int BuildAccentPulse(const IniPreset* p, char* buf, int buf_size) {
@@ -278,6 +284,7 @@ const IniStyleEntry ini_style_registry[] = {
   {"prequels",    "Prequel-era smooth blade",      BuildPrequels},
   {"sequels",     "Sequel-era slight flicker",     BuildSequels},
   {"ancient",     "Ancient Jedi temple style",     BuildAncient},
+  {"audioflicker", "Audio-reactive flicker blade",  BuildAudioFlicker},
 };
 
 const int INI_STYLE_COUNT = sizeof(ini_style_registry) / sizeof(ini_style_registry[0]);
@@ -383,6 +390,33 @@ static int BuildIniStyleForBlade(const IniPreset* preset,
   if (!style) {
     style = &ini_style_registry[0];
   }
+
+  // Schema-driven parser name resolution: if a generated style def exists
+  // for this style name, build the string using legacy build function then
+  // replace the parser token with the v2 name from the schema.
+  const GeneratedStyleDef* gen = FindGeneratedStyleDef(blade_view.style_name);
+  if (gen) {
+    int result = style->build(&blade_view, buf, buf_size);
+    if (result <= 0) return result;
+
+    // Replace legacy parser token (first space-delimited word) with v2 name.
+    const char* space = strchr(buf, ' ');
+    if (!space) return result;
+    int old_prefix_len = static_cast<int>(space - buf);
+    int new_prefix_len = static_cast<int>(strlen(gen->parser_name));
+    int tail_len = static_cast<int>(strlen(space));
+    int new_total = new_prefix_len + tail_len;
+    if (new_total >= buf_size) {
+      buf[buf_size - 1] = '\0';
+      return -1;
+    }
+    if (new_prefix_len != old_prefix_len) {
+      memmove(buf + new_prefix_len, space, tail_len + 1);
+    }
+    memcpy(buf, gen->parser_name, new_prefix_len);
+    return new_total;
+  }
+
   return style->build(&blade_view, buf, buf_size);
 }
 

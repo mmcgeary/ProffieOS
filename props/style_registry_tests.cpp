@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <new>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -46,6 +47,7 @@ char* itoa(int value, char* str, int radix) {
 #include "ini_loader.h"
 #undef private
 #include "style_registry.h"
+#include "generated_style_schema.h"
 
 struct SaberBase {
   enum LockupType {
@@ -368,6 +370,78 @@ static void TestParsePerBladePresetKeys() {
   CHECK(p.blades[1].flicker_depth == 9000);
 }
 
+static void TestParsePerBladeNamedStyleParams() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+
+  IniLoader::ParsePreset("blade1_param.audio_gain", "1200", &cfg.presets[0]);
+  IniLoader::ParsePreset("blade1_param.noise_floor", "42", &cfg.presets[0]);
+
+  const char* audio_gain = cfg.presets[0].blades[0].LookupNamedStyleParam("audio_gain");
+  const char* noise_floor = cfg.presets[0].blades[0].LookupNamedStyleParam("noise_floor");
+  CHECK(audio_gain != nullptr);
+  CHECK(noise_floor != nullptr);
+  CHECK(strcmp(audio_gain, "1200") == 0);
+  CHECK(strcmp(noise_floor, "42") == 0);
+}
+
+static void TestNamedStyleParamsInitializeWithoutSetDefaults() {
+  alignas(IniBladeStyle) unsigned char raw[sizeof(IniBladeStyle)];
+  memset(raw, 0xA5, sizeof(raw));
+  IniBladeStyle* blade = new (raw) IniBladeStyle;
+
+  CHECK(blade->named_style_param_count == 0);
+  CHECK(blade->SetNamedStyleParam("audio_gain", "1200"));
+  CHECK(blade->named_style_param_count == 1);
+
+  const char* audio_gain = blade->LookupNamedStyleParam("audio_gain");
+  CHECK(audio_gain != nullptr);
+  CHECK(strcmp(audio_gain, "1200") == 0);
+
+  blade->~IniBladeStyle();
+}
+
+static void TestNamedStyleParamCapacityOverflow() {
+  IniBladeStyle blade;
+  blade.ClearNamedStyleParams();
+
+  char name[32];
+  char value[32];
+  for (int i = 0; i < INI_MAX_STYLE_PARAMS; i++) {
+    snprintf(name, sizeof(name), "param_%d", i);
+    snprintf(value, sizeof(value), "%d", i);
+    CHECK(blade.SetNamedStyleParam(name, value));
+  }
+
+  CHECK(blade.named_style_param_count == INI_MAX_STYLE_PARAMS);
+  CHECK(!blade.SetNamedStyleParam("overflow", "9999"));
+  CHECK(blade.named_style_param_count == INI_MAX_STYLE_PARAMS);
+
+  for (int i = 0; i < INI_MAX_STYLE_PARAMS; i++) {
+    snprintf(name, sizeof(name), "param_%d", i);
+    snprintf(value, sizeof(value), "%d", i);
+    const char* found = blade.LookupNamedStyleParam(name);
+    CHECK(found != nullptr);
+    CHECK(strcmp(found, value) == 0);
+  }
+}
+
+static void TestNamedStyleParamDuplicateUpdate() {
+  IniBladeStyle blade;
+  blade.ClearNamedStyleParams();
+
+  CHECK(blade.SetNamedStyleParam("audio_gain", "1200"));
+  CHECK(blade.named_style_param_count == 1);
+  CHECK(blade.SetNamedStyleParam("AUDIO_GAIN", "900"));
+  CHECK(blade.named_style_param_count == 1);
+
+  const char* audio_gain = blade.LookupNamedStyleParam("audio_gain");
+  CHECK(audio_gain != nullptr);
+  CHECK(strcmp(audio_gain, "900") == 0);
+  CHECK(blade.FindNamedStyleParam("audio_gain") == 0);
+  CHECK(blade.LookupNamedStyleParam("noise_floor") == nullptr);
+}
+
 static void TestResolveStyleBladeCount() {
   RuntimeConfig cfg;
   cfg.SetDefaults();
@@ -648,6 +722,43 @@ static void TestBladeOutAllocationPolicy() {
   CHECK(!ShouldAllocateBladeOutConfig());
 }
 
+static void TestGeneratedStandardStyleSchemaContract() {
+  const GeneratedStyleDef* generated = FindGeneratedStyleDef("standard");
+  CHECK(generated != nullptr);
+  CHECK(strcmp(generated->core_type, "main") == 0);
+  CHECK(strcmp(generated->parser_name, "ini2_standard") == 0);
+}
+
+static void TestStandardEmitsV2ParserToken() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.blade_count = 1;
+  strcpy(p.blades[0].style_name, "standard");
+  CopyBladeToLegacyView(p.blades[0], &p);
+
+  char buf[1024];
+  CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
+  const auto tokens = SplitTokens(buf);
+  CHECK(tokens.size() > 0);
+  CheckTokenEq(tokens, 0, "ini2_standard");
+}
+
+static void TestAudioFlickerEmitsV2ParserToken() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.blade_count = 1;
+  strcpy(p.blades[0].style_name, "audioflicker");
+  CopyBladeToLegacyView(p.blades[0], &p);
+
+  char buf[1024];
+  CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
+  const auto tokens = SplitTokens(buf);
+  CHECK(tokens.size() > 0);
+  CheckTokenEq(tokens, 0, "ini2_audioflicker");
+}
+
 int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
@@ -657,6 +768,10 @@ int main() {
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
   TestParsePerBladePresetKeys();
+  TestParsePerBladeNamedStyleParams();
+  TestNamedStyleParamsInitializeWithoutSetDefaults();
+  TestNamedStyleParamCapacityOverflow();
+  TestNamedStyleParamDuplicateUpdate();
   TestResolveStyleBladeCount();
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();
@@ -678,5 +793,8 @@ int main() {
   TestGestureFlagsNeedOffMotion();
   TestIniLoadRetryPolicyAllowsRecoveryAttempts();
   TestBladeOutAllocationPolicy();
+  TestGeneratedStandardStyleSchemaContract();
+  TestStandardEmitsV2ParserToken();
+  TestAudioFlickerEmitsV2ParserToken();
   return 0;
 }

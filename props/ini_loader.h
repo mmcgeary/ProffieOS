@@ -164,6 +164,12 @@ private:
   }
 
   static bool ParseBladeField(const char* key, const char* val, IniBladeStyle* blade) {
+    if (strncasecmp(key, "param.", 6) == 0) {
+      const char* param_name = key + 6;
+      if (!param_name[0]) return false;
+      return blade->SetNamedStyleParam(param_name, val);
+    }
+
     if (strcasecmp(key, "style") == 0) {
       strncpy(blade->style_name, val, INI_MAX_STYLE_NAME_LEN - 1);
       blade->style_name[INI_MAX_STYLE_NAME_LEN - 1] = 0;
