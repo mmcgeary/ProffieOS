@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <new>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -384,6 +385,63 @@ static void TestParsePerBladeNamedStyleParams() {
   CHECK(strcmp(noise_floor, "42") == 0);
 }
 
+static void TestNamedStyleParamsInitializeWithoutSetDefaults() {
+  alignas(IniBladeStyle) unsigned char raw[sizeof(IniBladeStyle)];
+  memset(raw, 0xA5, sizeof(raw));
+  IniBladeStyle* blade = new (raw) IniBladeStyle;
+
+  CHECK(blade->named_style_param_count == 0);
+  CHECK(blade->SetNamedStyleParam("audio_gain", "1200"));
+  CHECK(blade->named_style_param_count == 1);
+
+  const char* audio_gain = blade->LookupNamedStyleParam("audio_gain");
+  CHECK(audio_gain != nullptr);
+  CHECK(strcmp(audio_gain, "1200") == 0);
+
+  blade->~IniBladeStyle();
+}
+
+static void TestNamedStyleParamCapacityOverflow() {
+  IniBladeStyle blade;
+  blade.ClearNamedStyleParams();
+
+  char name[32];
+  char value[32];
+  for (int i = 0; i < INI_MAX_STYLE_PARAMS; i++) {
+    snprintf(name, sizeof(name), "param_%d", i);
+    snprintf(value, sizeof(value), "%d", i);
+    CHECK(blade.SetNamedStyleParam(name, value));
+  }
+
+  CHECK(blade.named_style_param_count == INI_MAX_STYLE_PARAMS);
+  CHECK(!blade.SetNamedStyleParam("overflow", "9999"));
+  CHECK(blade.named_style_param_count == INI_MAX_STYLE_PARAMS);
+
+  for (int i = 0; i < INI_MAX_STYLE_PARAMS; i++) {
+    snprintf(name, sizeof(name), "param_%d", i);
+    snprintf(value, sizeof(value), "%d", i);
+    const char* found = blade.LookupNamedStyleParam(name);
+    CHECK(found != nullptr);
+    CHECK(strcmp(found, value) == 0);
+  }
+}
+
+static void TestNamedStyleParamDuplicateUpdate() {
+  IniBladeStyle blade;
+  blade.ClearNamedStyleParams();
+
+  CHECK(blade.SetNamedStyleParam("audio_gain", "1200"));
+  CHECK(blade.named_style_param_count == 1);
+  CHECK(blade.SetNamedStyleParam("AUDIO_GAIN", "900"));
+  CHECK(blade.named_style_param_count == 1);
+
+  const char* audio_gain = blade.LookupNamedStyleParam("audio_gain");
+  CHECK(audio_gain != nullptr);
+  CHECK(strcmp(audio_gain, "900") == 0);
+  CHECK(blade.FindNamedStyleParam("audio_gain") == 0);
+  CHECK(blade.LookupNamedStyleParam("noise_floor") == nullptr);
+}
+
 static void TestResolveStyleBladeCount() {
   RuntimeConfig cfg;
   cfg.SetDefaults();
@@ -681,6 +739,9 @@ int main() {
   TestBaseContrastAliasAndClamps();
   TestParsePerBladePresetKeys();
   TestParsePerBladeNamedStyleParams();
+  TestNamedStyleParamsInitializeWithoutSetDefaults();
+  TestNamedStyleParamCapacityOverflow();
+  TestNamedStyleParamDuplicateUpdate();
   TestResolveStyleBladeCount();
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();

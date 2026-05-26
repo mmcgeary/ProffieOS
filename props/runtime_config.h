@@ -204,7 +204,7 @@ struct IniBladeStyle {
   uint16_t fire_cooling;
   uint16_t rainbow_speed;
   NamedStyleParam named_style_params[INI_MAX_STYLE_PARAMS];
-  uint8_t named_style_param_count;
+  uint8_t named_style_param_count = 0;
 
   void ClearNamedStyleParams() {
     named_style_param_count = 0;
