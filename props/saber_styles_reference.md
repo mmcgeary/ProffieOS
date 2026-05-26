@@ -19,14 +19,26 @@ blade1_ignition_time = 300
 blade1_param.style_option = 2
 ```
 
+### Two Syntax Paths
+
+The firmware INI parser recognises two kinds of per-blade keys:
+
+1. **Hardcoded keys** (`bladeN_<key>`) — a fixed set of keys parsed directly
+   by the firmware. Only the keys listed in the tables below are accepted;
+   any other `bladeN_<key>` form is **silently ignored**.
+2. **Schema param keys** (`bladeN_param.<name>`) — arbitrary named parameters
+   routed to the style template via `SetNamedStyleParam()`. These are defined
+   by the generated style schema and may vary per style.
+
 ### Key Categories
 
 | Category | Example key | Description |
 |----------|-------------|-------------|
 | Style selector | `blade1_style = standard` | Selects the style template |
-| Core / shared keys | `blade1_base_color`, `blade1_ignition_time` | Common to all styles (see table below) |
-| Runtime tuning | `blade1_flicker_depth`, `blade1_noise_mix` | Per-style modulation knobs (see matrix below) |
-| Named style params | `blade1_param.<name> = <value>` | Style-specific parameters defined by the schema |
+| Hardcoded colors | `blade1_base_color = dodgerblue` | Fixed color keys accepted by the parser (see table below) |
+| Hardcoded timing | `blade1_ignition_time = 300` | Fixed timing keys accepted by the parser |
+| Runtime tuning | `blade1_flicker_depth = 8000` | Modulation knobs — universal across all styles (see matrix) |
+| Schema params | `blade1_param.<name> = <value>` | Named style parameters defined by the schema |
 | Preset-level | `off_mode`, `off_rate_ms`, `accent_style` | Shared across all blades in a preset |
 
 ## Main Blade Styles
@@ -50,60 +62,84 @@ blade1_param.style_option = 2
 | sequels     | Sequel-era with slight flicker            |
 | ancient     | Ancient/Jedi temple style                 |
 
-## Schema-Driven Core Parameters (Shared Across All Styles)
+## Hardcoded INI Keys (`bladeN_<key>`)
 
-These keys are defined by the generated style schema and accepted for every
-style. They map to named style argument slots in the underlying C++ template.
+These keys are parsed directly by the firmware INI loader (`ParseBladeField` /
+`ParseColorField`). They work with all styles and **do not** require the
+`param.` prefix.
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `base_color` | color | Primary blade color |
-| `alt_color` | color | Secondary / accent blade color |
-| `blast_color` | color | Blaster deflect flash color |
-| `clash_color` | color | Clash impact color |
-| `lockup_color` | color | Lockup effect color |
-| `drag_color` | color | Drag effect color |
-| `lb_color` | color | Lightning block color |
-| `stab_color` | color | Stab effect color |
-| `swing_color` | color | Swing accent color |
-| `emitter_color` | color | Emitter flare color |
-| `preon_color` | color | Pre-on effect color |
-| `off_color` | color | Off-state color |
-| `postoff_color` | color | Post-off color |
-| `ignition_color` | color | Ignition flash color |
-| `retraction_color` | color | Retraction flash color |
-| `ignition_time` | int (50–2000) | Ignition duration in ms |
-| `retraction_time` | int (50–2000) | Retraction duration in ms |
-| `ignition_delay` | int | Ignition start delay |
-| `ignition_power_up` | int | Ignition power-up option |
-| `retraction_delay` | int | Retraction start delay |
-| `retraction_cool_down` | int | Retraction cool-down option |
-| `lockup_position` | int | Lockup effect position |
-| `drag_size` | int | Drag effect size |
-| `melt_size` | int | Melt effect size |
-| `emitter_size` | int | Emitter flare size |
-| `preon_size` | int | Pre-on effect size |
-| `style_option` | int | Style variant selector |
-| `swing_option` | int | Swing effect variant |
-| `ignition_option` | int | Ignition animation variant |
-| `retraction_option` | int | Retraction animation variant |
-| `preon_option` | int | Pre-on animation variant |
-| `off_option` | int | Off-state animation variant |
+### Hardcoded Color Keys
 
-## Style-Specific Parameters (`param.*`)
+| Key | Description |
+|-----|-------------|
+| `base_color` | Primary blade color |
+| `alt_color` | Secondary / accent blade color |
+| `blast_color` | Blaster deflect flash color |
+| `clash_color` | Clash impact color |
+| `lockup_color` | Lockup effect color |
+| `drag_color` | Drag effect color |
+| `lb_color` | Lightning block color |
+| `stab_color` | Stab effect color |
+| `swing_color` | Swing accent color |
+| `emitter_color` | Emitter flare color |
+| `preon_color` | Pre-on effect color |
+| `off_color` | Off-state color |
 
-Some styles expose additional parameters through the `param.` namespace.
-These are defined per-style in the generated schema. In INI they are written
-as `bladeN_param.<name> = <value>`.
+### Hardcoded Timing Keys
 
-Currently both `standard` and `audioflicker` expose:
+| Key | Range | Description |
+|-----|-------|-------------|
+| `ignition_time` | 50–2000 | Ignition duration in ms |
+| `retraction_time` | 50–2000 | Retraction duration in ms |
 
-| Param key | Description |
-|-----------|-------------|
-| `param.style_option` | Style variant selector (schema-driven) |
-| `param.swing_option` | Swing variant selector (schema-driven) |
-| `param.ignition_option` | Ignition variant selector (schema-driven) |
-| `param.retraction_option` | Retraction variant selector (schema-driven) |
+> **Note:** Other schema parameters such as `postoff_color`, `ignition_color`,
+> `retraction_color`, `ignition_delay`, `ignition_power_up`,
+> `retraction_delay`, `retraction_cool_down`, `lockup_position`, `drag_size`,
+> `melt_size`, `emitter_size`, `preon_size`, and all `*_option` keys are
+> **not** hardcoded. They must be set via `bladeN_param.<name>` (see below).
+
+## Schema Parameters (`bladeN_param.<name>`)
+
+All styles share a set of core schema parameters. These are routed through the
+named-parameter mechanism and **must** use the `bladeN_param.<name>` syntax.
+
+### Core Schema Params (all styles)
+
+| Param key | Type | Description |
+|-----------|------|-------------|
+| `param.postoff_color` | color | Post-off color |
+| `param.ignition_color` | color | Ignition flash color |
+| `param.retraction_color` | color | Retraction flash color |
+| `param.ignition_delay` | int | Ignition start delay |
+| `param.ignition_power_up` | int | Ignition power-up option |
+| `param.retraction_delay` | int | Retraction start delay |
+| `param.retraction_cool_down` | int | Retraction cool-down option |
+| `param.lockup_position` | int | Lockup effect position |
+| `param.drag_size` | int | Drag effect size |
+| `param.melt_size` | int | Melt effect size |
+| `param.emitter_size` | int | Emitter flare size |
+| `param.preon_size` | int | Pre-on effect size |
+| `param.style_option` | int | Style variant selector |
+| `param.swing_option` | int | Swing effect variant |
+| `param.ignition_option` | int | Ignition animation variant |
+| `param.retraction_option` | int | Retraction animation variant |
+| `param.preon_option` | int | Pre-on animation variant |
+| `param.off_option` | int | Off-state animation variant |
+
+### Additional Params for `audioflicker`
+
+The `audioflicker` style includes the secondary parameter set. These keys
+are **only** accepted when the active style is `audioflicker` (or any future
+style with `include_secondary: true` in the schema).
+
+| Param key | Type | Description |
+|-----------|------|-------------|
+| `param.alt_color2` | color | Tertiary accent color |
+| `param.alt_color3` | color | Quaternary accent color |
+| `param.style_option2` | int | Second style variant selector |
+| `param.style_option3` | int | Third style variant selector |
+| `param.ignition_option2` | int | Second ignition animation variant |
+| `param.retraction_option2` | int | Second retraction animation variant |
 
 As more styles are added to the schema generator their style-specific
 parameters will appear here automatically.
@@ -117,7 +153,10 @@ Each preset supports minimal off-state animation controls:
 
 ## Runtime Tuning Parameters
 
-These keys are read from each preset and feed the template style engine directly:
+These are **hardcoded** `bladeN_<key>` keys accepted by the INI parser for
+every style. They feed the template style engine directly and control visual
+modulation. While all styles accept these keys, most have a subtle (S) or no
+(-) effect depending on the style (see matrix below).
 
 | Key | Full range | Practical range | What it changes |
 |-----|------------|-----------------|-----------------|
