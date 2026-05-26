@@ -144,6 +144,12 @@ NamedStyle named_styles[] = {
   { "ini_ancient", IniStyleAllocatorPtr<IniBaseAncient>(),
     "INI template style, ancient base"
   },
+  { "ini2_standard", IniStyleAllocatorV2Ptr<IniBaseStandardV2>(),
+    "INI v2 template style, standard base"
+  },
+  { "ini2_audioflicker", IniStyleAllocatorV2Ptr<IniBaseAudioFlickerV2>(),
+    "INI v2 template style, audio flicker base"
+  },
 #endif
   { "builtin", &builtin_preset_allocator,
     // TODO: Support multiple argument templates.
