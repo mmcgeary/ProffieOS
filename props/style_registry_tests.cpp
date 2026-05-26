@@ -369,6 +369,21 @@ static void TestParsePerBladePresetKeys() {
   CHECK(p.blades[1].flicker_depth == 9000);
 }
 
+static void TestParsePerBladeNamedStyleParams() {
+  RuntimeConfig cfg;
+  cfg.SetDefaults();
+
+  IniLoader::ParsePreset("blade1_param.audio_gain", "1200", &cfg.presets[0]);
+  IniLoader::ParsePreset("blade1_param.noise_floor", "42", &cfg.presets[0]);
+
+  const char* audio_gain = cfg.presets[0].blades[0].LookupNamedStyleParam("audio_gain");
+  const char* noise_floor = cfg.presets[0].blades[0].LookupNamedStyleParam("noise_floor");
+  CHECK(audio_gain != nullptr);
+  CHECK(noise_floor != nullptr);
+  CHECK(strcmp(audio_gain, "1200") == 0);
+  CHECK(strcmp(noise_floor, "42") == 0);
+}
+
 static void TestResolveStyleBladeCount() {
   RuntimeConfig cfg;
   cfg.SetDefaults();
@@ -665,6 +680,7 @@ int main() {
   TestEveryMainStyleBuildContract();
   TestBaseContrastAliasAndClamps();
   TestParsePerBladePresetKeys();
+  TestParsePerBladeNamedStyleParams();
   TestResolveStyleBladeCount();
   TestBuildStyleFallsBackToBladeZeroForMissingBlade();
   TestStyleStringTruncationGuard();

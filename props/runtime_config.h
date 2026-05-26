@@ -16,6 +16,9 @@
 #define INI_MAX_STYLE_NAME_LEN 24
 #define INI_MAX_FONT_PATH_LEN 64
 #define INI_MAX_TRACK_PATH_LEN 64
+#define INI_MAX_STYLE_PARAMS 8
+#define INI_MAX_STYLE_PARAM_NAME_LEN 24
+#define INI_MAX_STYLE_PARAM_VALUE_LEN 24
 
 #ifndef INI_MAX_BLADES
 #ifdef INI_NUM_BLADES
@@ -162,6 +165,11 @@ IniAction LookupAction(const char* name) {
 }
 
 struct IniBladeStyle {
+  struct NamedStyleParam {
+    char name[INI_MAX_STYLE_PARAM_NAME_LEN];
+    char value[INI_MAX_STYLE_PARAM_VALUE_LEN];
+  };
+
   char style_name[INI_MAX_STYLE_NAME_LEN];
   char base_color[20];
   char alt_color[20];
@@ -195,6 +203,49 @@ struct IniBladeStyle {
   uint16_t heat_rand;
   uint16_t fire_cooling;
   uint16_t rainbow_speed;
+  NamedStyleParam named_style_params[INI_MAX_STYLE_PARAMS];
+  uint8_t named_style_param_count;
+
+  void ClearNamedStyleParams() {
+    named_style_param_count = 0;
+    for (int i = 0; i < INI_MAX_STYLE_PARAMS; i++) {
+      named_style_params[i].name[0] = 0;
+      named_style_params[i].value[0] = 0;
+    }
+  }
+
+  int FindNamedStyleParam(const char* name) const {
+    if (!name || !name[0]) return -1;
+    for (int i = 0; i < named_style_param_count; i++) {
+      if (strcasecmp(named_style_params[i].name, name) == 0) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool SetNamedStyleParam(const char* name, const char* value) {
+    if (!name || !name[0] || !value) return false;
+
+    int idx = FindNamedStyleParam(name);
+    if (idx < 0) {
+      if (named_style_param_count >= INI_MAX_STYLE_PARAMS) {
+        return false;
+      }
+      idx = named_style_param_count++;
+      strncpy(named_style_params[idx].name, name, INI_MAX_STYLE_PARAM_NAME_LEN - 1);
+      named_style_params[idx].name[INI_MAX_STYLE_PARAM_NAME_LEN - 1] = 0;
+    }
+
+    strncpy(named_style_params[idx].value, value, INI_MAX_STYLE_PARAM_VALUE_LEN - 1);
+    named_style_params[idx].value[INI_MAX_STYLE_PARAM_VALUE_LEN - 1] = 0;
+    return true;
+  }
+
+  const char* LookupNamedStyleParam(const char* name) const {
+    const int idx = FindNamedStyleParam(name);
+    return idx < 0 ? nullptr : named_style_params[idx].value;
+  }
 
   void SetDefaults() {
     strcpy(style_name, "standard");
@@ -231,6 +282,7 @@ struct IniBladeStyle {
     heat_rand = 4500;
     fire_cooling = 55;
     rainbow_speed = 800;
+    ClearNamedStyleParams();
   }
 };
 
