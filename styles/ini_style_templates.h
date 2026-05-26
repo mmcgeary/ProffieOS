@@ -261,6 +261,7 @@ StyleAllocator IniStyleAllocatorPtr() {
 // (BASE_COLOR_ARG, ALT_COLOR_ARG, etc.) via the existing ini_args namespace.
 // They intentionally reuse IniStyleAllocatorPtr<>; only the BASE aliases differ.
 
+// Intentionally matches IniBaseStandard for now; schema-v2 can diverge later.
 using IniBaseStandardV2 = RgbArg<ini_args::kBaseColorArg, CYAN>;
 
 using IniBaseAudioFlickerV2 =
