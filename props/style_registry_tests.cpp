@@ -46,6 +46,7 @@ char* itoa(int value, char* str, int radix) {
 #include "ini_loader.h"
 #undef private
 #include "style_registry.h"
+#include "generated_style_schema.h"
 
 struct SaberBase {
   enum LockupType {
@@ -648,6 +649,13 @@ static void TestBladeOutAllocationPolicy() {
   CHECK(!ShouldAllocateBladeOutConfig());
 }
 
+static void TestGeneratedStandardStyleSchemaContract() {
+  const GeneratedStyleDef* generated = FindGeneratedStyleDef("standard");
+  CHECK(generated != nullptr);
+  CHECK(strcmp(generated->core_type, "main") == 0);
+  CHECK(strcmp(generated->parser_name, "ini2_standard") == 0);
+}
+
 int main() {
   TestArgIndexConstants();
   TestStandardIncludesAllTuningArgs();
@@ -678,5 +686,6 @@ int main() {
   TestGestureFlagsNeedOffMotion();
   TestIniLoadRetryPolicyAllowsRecoveryAttempts();
   TestBladeOutAllocationPolicy();
+  TestGeneratedStandardStyleSchemaContract();
   return 0;
 }
