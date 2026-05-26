@@ -3,6 +3,7 @@
 #define PROPS_GENERATED_STYLE_SCHEMA_H
 
 #include <cstring>
+#include <strings.h>
 
 struct GeneratedParamDef {
   const char* style_name;
@@ -109,7 +110,7 @@ static inline const GeneratedStyleDef* FindGeneratedStyleDef(const char* style_n
     return nullptr;
   }
   for (int i = 0; i < kGeneratedStyleDefCount; ++i) {
-    if (std::strcmp(style_name, kGeneratedStyleDefs[i].name) == 0) {
+    if (strcasecmp(style_name, kGeneratedStyleDefs[i].name) == 0) {
       return &kGeneratedStyleDefs[i];
     }
   }
