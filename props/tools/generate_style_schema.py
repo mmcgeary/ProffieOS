@@ -242,7 +242,7 @@ def resolve_companion_output_path(repo_root):
     for candidate in candidates:
         if candidate.parent.exists():
             return candidate
-    raise FileNotFoundError("Unable to locate ProffieOS-Companion/src/config directory")
+    return None
 
 
 def write_if_changed(path, content):
@@ -267,11 +267,15 @@ def main():
 
     schema_path = Path(args.schema).resolve()
     header_output_path = Path(args.header_output).resolve()
-    companion_output_path = (
-        Path(args.companion_output).resolve()
-        if args.companion_output
-        else resolve_companion_output_path(REPO_ROOT)
-    )
+    companion_output_path = None
+    if args.companion_output:
+        companion_output_path = Path(args.companion_output).resolve()
+        if not companion_output_path.parent.exists():
+            raise FileNotFoundError(
+                f"Companion output directory does not exist: {companion_output_path.parent}"
+            )
+    else:
+        companion_output_path = resolve_companion_output_path(REPO_ROOT)
 
     schema = load_schema(schema_path)
     flat_params, style_defs = build_generated_tables(schema)
@@ -280,7 +284,8 @@ def main():
     companion_content = render_companion_schema(schema)
 
     write_if_changed(header_output_path, header_content)
-    write_if_changed(companion_output_path, companion_content)
+    if companion_output_path is not None:
+        write_if_changed(companion_output_path, companion_content)
 
 
 if __name__ == "__main__":
