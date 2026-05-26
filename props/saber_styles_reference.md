@@ -1,12 +1,40 @@
-# Available Blade Styles
+# Style System Reference
 
-Use these names in the `style` field of your preset sections in `saber_config.ini`.
+This document describes the schema-driven style preset model used in
+`saber_config.ini`. Both the firmware INI loader and the Companion app share
+the same generated schema (`generated_style_schema`), so any style or
+parameter listed here works identically in both.
+
+## How INI Preset Keys Work
+
+Every per-blade key is prefixed with `bladeN_` (1-based). When only one blade
+is present you may omit the prefix (bare keys apply to blade 1).
+
+```ini
+[preset1]
+font = bank/font1
+blade1_style = standard
+blade1_base_color = dodgerblue
+blade1_ignition_time = 300
+blade1_param.style_option = 2
+```
+
+### Key Categories
+
+| Category | Example key | Description |
+|----------|-------------|-------------|
+| Style selector | `blade1_style = standard` | Selects the style template |
+| Core / shared keys | `blade1_base_color`, `blade1_ignition_time` | Common to all styles (see table below) |
+| Runtime tuning | `blade1_flicker_depth`, `blade1_noise_mix` | Per-style modulation knobs (see matrix below) |
+| Named style params | `blade1_param.<name> = <value>` | Style-specific parameters defined by the schema |
+| Preset-level | `off_mode`, `off_rate_ms`, `accent_style` | Shared across all blades in a preset |
 
 ## Main Blade Styles
 
 | Style Name   | Description                              |
 |-------------|------------------------------------------|
 | standard    | Classic solid color blade                 |
+| audioflicker| Audio-reactive flicker blade              |
 | humpflicker | Subtle hump flicker blade                 |
 | unstable    | Flickering/crackling unstable blade       |
 | fire        | Flame animated blade                      |
@@ -22,6 +50,64 @@ Use these names in the `style` field of your preset sections in `saber_config.in
 | sequels     | Sequel-era with slight flicker            |
 | ancient     | Ancient/Jedi temple style                 |
 
+## Schema-Driven Core Parameters (Shared Across All Styles)
+
+These keys are defined by the generated style schema and accepted for every
+style. They map to named style argument slots in the underlying C++ template.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `base_color` | color | Primary blade color |
+| `alt_color` | color | Secondary / accent blade color |
+| `blast_color` | color | Blaster deflect flash color |
+| `clash_color` | color | Clash impact color |
+| `lockup_color` | color | Lockup effect color |
+| `drag_color` | color | Drag effect color |
+| `lb_color` | color | Lightning block color |
+| `stab_color` | color | Stab effect color |
+| `swing_color` | color | Swing accent color |
+| `emitter_color` | color | Emitter flare color |
+| `preon_color` | color | Pre-on effect color |
+| `off_color` | color | Off-state color |
+| `postoff_color` | color | Post-off color |
+| `ignition_color` | color | Ignition flash color |
+| `retraction_color` | color | Retraction flash color |
+| `ignition_time` | int (50–2000) | Ignition duration in ms |
+| `retraction_time` | int (50–2000) | Retraction duration in ms |
+| `ignition_delay` | int | Ignition start delay |
+| `ignition_power_up` | int | Ignition power-up option |
+| `retraction_delay` | int | Retraction start delay |
+| `retraction_cool_down` | int | Retraction cool-down option |
+| `lockup_position` | int | Lockup effect position |
+| `drag_size` | int | Drag effect size |
+| `melt_size` | int | Melt effect size |
+| `emitter_size` | int | Emitter flare size |
+| `preon_size` | int | Pre-on effect size |
+| `style_option` | int | Style variant selector |
+| `swing_option` | int | Swing effect variant |
+| `ignition_option` | int | Ignition animation variant |
+| `retraction_option` | int | Retraction animation variant |
+| `preon_option` | int | Pre-on animation variant |
+| `off_option` | int | Off-state animation variant |
+
+## Style-Specific Parameters (`param.*`)
+
+Some styles expose additional parameters through the `param.` namespace.
+These are defined per-style in the generated schema. In INI they are written
+as `bladeN_param.<name> = <value>`.
+
+Currently both `standard` and `audioflicker` expose:
+
+| Param key | Description |
+|-----------|-------------|
+| `param.style_option` | Style variant selector (schema-driven) |
+| `param.swing_option` | Swing variant selector (schema-driven) |
+| `param.ignition_option` | Ignition variant selector (schema-driven) |
+| `param.retraction_option` | Retraction variant selector (schema-driven) |
+
+As more styles are added to the schema generator their style-specific
+parameters will appear here automatically.
+
 ## Preset Off-Mode Controls
 
 Each preset supports minimal off-state animation controls:
@@ -31,7 +117,7 @@ Each preset supports minimal off-state animation controls:
 
 ## Runtime Tuning Parameters
 
-These keys are read from each preset and now feed the template style engine directly:
+These keys are read from each preset and feed the template style engine directly:
 
 | Key | Full range | Practical range | What it changes |
 |-----|------------|-----------------|-----------------|
