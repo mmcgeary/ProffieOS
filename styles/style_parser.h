@@ -144,10 +144,13 @@ NamedStyle named_styles[] = {
   { "ini_ancient", IniStyleAllocatorPtr<IniBaseAncient>(),
     "INI template style, ancient base"
   },
-  { "ini2_standard", IniStyleAllocatorV2Ptr<IniBaseStandardV2>(),
+  { "ini_audioflicker", IniStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
+    "INI template style, audio flicker base (legacy token alias)"
+  },
+  { "ini2_standard", IniStyleAllocatorPtr<IniBaseStandardV2>(),
     "INI v2 template style, standard base"
   },
-  { "ini2_audioflicker", IniStyleAllocatorV2Ptr<IniBaseAudioFlickerV2>(),
+  { "ini2_audioflicker", IniStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
     "INI v2 template style, audio flicker base"
   },
 #endif

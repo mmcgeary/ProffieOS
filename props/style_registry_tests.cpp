@@ -729,6 +729,21 @@ static void TestGeneratedStandardStyleSchemaContract() {
   CHECK(strcmp(generated->parser_name, "ini2_standard") == 0);
 }
 
+static void TestStandardEmitsV2ParserToken() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.blade_count = 1;
+  strcpy(p.blades[0].style_name, "standard");
+  CopyBladeToLegacyView(p.blades[0], &p);
+
+  char buf[1024];
+  CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
+  const auto tokens = SplitTokens(buf);
+  CHECK(tokens.size() > 0);
+  CheckTokenEq(tokens, 0, "ini2_standard");
+}
+
 static void TestAudioFlickerEmitsV2ParserToken() {
   IniPreset p;
   p.SetDefaults();
@@ -779,6 +794,7 @@ int main() {
   TestIniLoadRetryPolicyAllowsRecoveryAttempts();
   TestBladeOutAllocationPolicy();
   TestGeneratedStandardStyleSchemaContract();
+  TestStandardEmitsV2ParserToken();
   TestAudioFlickerEmitsV2ParserToken();
   return 0;
 }

@@ -259,6 +259,7 @@ StyleAllocator IniStyleAllocatorPtr() {
 // --- Schema v2 base templates ---
 // These use the same argument symbols as the generated schema definitions
 // (BASE_COLOR_ARG, ALT_COLOR_ARG, etc.) via the existing ini_args namespace.
+// They intentionally reuse IniStyleAllocatorPtr<>; only the BASE aliases differ.
 
 using IniBaseStandardV2 = RgbArg<ini_args::kBaseColorArg, CYAN>;
 
@@ -269,10 +270,5 @@ using IniBaseAudioFlickerV2 =
             IntArg<ini_args::kBaseContrastArg, 4096>,
             RgbArg<ini_args::kBaseColorArg, Blue>,
             White>>;
-
-template<class BASE>
-StyleAllocator IniStyleAllocatorV2Ptr() {
-  return StylePtr<IniPrimaryBlade<BASE>>();
-}
 
 #endif  // STYLES_INI_STYLE_TEMPLATES_H
