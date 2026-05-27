@@ -6,8 +6,8 @@ namespace ini_style_args {
 enum ArgId : int {
   kBaseColorArg = 1,
   kAltColorArg = 2,
-  kArg3 = 3,
-  kArg4 = 4,
+  kStyleOptionArg = 3,
+  kIgnitionOptionArg = 4,
   kBlastColorArg = 5,
   kClashColorArg = 6,
   kLockupColorArg = 7,
@@ -34,8 +34,36 @@ enum ArgId : int {
   kHeatRandArg = 28,
   kFireCoolingArg = 29,
   kRainbowSpeedArg = 30,
+  kAltColor2Arg = 31,
+  kAltColor3Arg = 32,
+  kStyleOption2Arg = 33,
+  kStyleOption3Arg = 34,
+  kIgnitionOption2Arg = 35,
+  kRetractionOption2Arg = 36,
+  kRetractionOptionArg = 37,
+  kSwingOptionArg = 38,
+  kIgnitionDelayArg = 39,
+  kRetractionDelayArg = 40,
+  kLockupPositionArg = 41,
+  kDragSizeArg = 42,
+  kMeltSizeArg = 43,
+  kSwingColorArg = 44,
+  kEmitterSizeArg = 45,
+  kPreonColorArg = 46,
+  kPreonOptionArg = 47,
+  kPreonSizeArg = 48,
+  kRetractionColorArg = 49,
+  kRetractionCoolDownArg = 50,
+  kPostOffColorArg = 51,
+  kIgnitionColorArg = 52,
+  kIgnitionPowerUpArg = 53,
   kArgCount = kRainbowSpeedArg,
+  kExtendedArgCount = kIgnitionPowerUpArg,
 };
+
+// Legacy aliases kept for compatibility with existing template code.
+static constexpr int kArg3 = kStyleOptionArg;
+static constexpr int kArg4 = kIgnitionOptionArg;
 
 static constexpr int kFirstTuningArg = kFlickerDepthArg;
 static constexpr int kTuningArgCount = kRainbowSpeedArg - kFlickerDepthArg + 1;

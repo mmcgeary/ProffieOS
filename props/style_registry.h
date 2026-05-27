@@ -5,6 +5,7 @@
 #include "ini_tuning_arg_table.h"
 #include "runtime_config.h"
 #include "generated_style_schema.h"
+#include "../styles/ini_style_arg_ids.h"
 #include <stdarg.h>
 
 #define MAX_STYLE_STRING_LEN 640
@@ -15,7 +16,7 @@
 
 struct IniPreset;
 
-typedef int (*StyleBuildFn)(const IniPreset* preset, char* buf, int buf_size);
+typedef int (*StyleBuildFn)(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size);
 
 struct IniStyleEntry {
   const char* name;
@@ -23,8 +24,8 @@ struct IniStyleEntry {
   StyleBuildFn build;
 };
 
-static unsigned int BuildOffModeSelector(const IniPreset* p) {
-  return (p->off_mode == OFF_MODE_RANDOM) ? 2u : 1u;
+static unsigned int BuildOffModeSelector(const IniPreset* preset) {
+  return (preset->off_mode == OFF_MODE_RANDOM) ? 2u : 1u;
 }
 
 static unsigned int PulseMillisToRpm(unsigned int pulse_millis) {
@@ -33,9 +34,9 @@ static unsigned int PulseMillisToRpm(unsigned int pulse_millis) {
   return (pulse_rpm > 0u) ? pulse_rpm : 1u;
 }
 
-static unsigned int BuildOffRateArg(const IniPreset* p) {
-  const unsigned int off_rate_ms = (p->off_rate_ms > 0u) ? p->off_rate_ms : 1u;
-  if (p->off_mode == OFF_MODE_RANDOM) {
+static unsigned int BuildOffRateArg(const IniPreset* preset) {
+  const unsigned int off_rate_ms = (preset->off_rate_ms > 0u) ? preset->off_rate_ms : 1u;
+  if (preset->off_mode == OFF_MODE_RANDOM) {
     return off_rate_ms;
   }
   return PulseMillisToRpm(off_rate_ms);
@@ -58,11 +59,11 @@ static int BuildStyleString(char* buf, int buf_size, const char* format, ...) {
 
 struct IniTuningArgDef {
   int arg_id;
-  uint16_t IniPreset::* member;
+  uint16_t IniBladeStyle::* member;
 };
 
 #define INI_TUNING_ARG_DEF(field, arg_id, key, default_value) \
-  { ini_style_args::arg_id, &IniPreset::field },
+  { ini_style_args::arg_id, &IniBladeStyle::field },
 static constexpr IniTuningArgDef kIniTuningArgDefs[] = {
   INI_TUNING_ARG_TABLE(INI_TUNING_ARG_DEF)
 };
@@ -89,11 +90,11 @@ static_assert(
     ini_style_args::kOffRateMsArg + 1 == ini_style_args::kFirstTuningArg,
     "Expected tuning args to start immediately after off-rate argument.");
 
-static int AppendIniTuningArgs(char* buf, int buf_size, int written, const IniPreset* p) {
+static int AppendIniTuningArgs(char* buf, int buf_size, int written, const IniBladeStyle* blade) {
   if (written < 0 || written >= buf_size) return -1;
   const int count = sizeof(kIniTuningArgDefs) / sizeof(kIniTuningArgDefs[0]);
   for (int i = 0; i < count; i++) {
-    unsigned int value = static_cast<unsigned int>(p->*(kIniTuningArgDefs[i].member));
+    unsigned int value = static_cast<unsigned int>(blade->*(kIniTuningArgDefs[i].member));
     if (kIniTuningArgDefs[i].arg_id == ini_style_args::kFlickerSpeedArg) {
       value = PulseMillisToRpm(value);
     }
@@ -107,8 +108,166 @@ static int AppendIniTuningArgs(char* buf, int buf_size, int written, const IniPr
   return written;
 }
 
+static int ResolveGeneratedArgIndex(const char* arg_symbol) {
+  if (!arg_symbol) return -1;
+#define MATCH_SYMBOL(name, arg_id) \
+  if (strcmp(arg_symbol, name) == 0) return ini_style_args::arg_id;
+  MATCH_SYMBOL("BASE_COLOR_ARG", kBaseColorArg)
+  MATCH_SYMBOL("ALT_COLOR_ARG", kAltColorArg)
+  MATCH_SYMBOL("STYLE_OPTION_ARG", kStyleOptionArg)
+  MATCH_SYMBOL("IGNITION_OPTION_ARG", kIgnitionOptionArg)
+  MATCH_SYMBOL("BLAST_COLOR_ARG", kBlastColorArg)
+  MATCH_SYMBOL("CLASH_COLOR_ARG", kClashColorArg)
+  MATCH_SYMBOL("LOCKUP_COLOR_ARG", kLockupColorArg)
+  MATCH_SYMBOL("LB_COLOR_ARG", kLbColorArg)
+  MATCH_SYMBOL("DRAG_COLOR_ARG", kDragColorArg)
+  MATCH_SYMBOL("STAB_COLOR_ARG", kStabColorArg)
+  MATCH_SYMBOL("EMITTER_COLOR_ARG", kEmitterColorArg)
+  MATCH_SYMBOL("IGNITION_TIME_ARG", kIgnitionTimeArg)
+  MATCH_SYMBOL("RETRACTION_TIME_ARG", kRetractionTimeArg)
+  MATCH_SYMBOL("OFF_COLOR_ARG", kOffColorArg)
+  MATCH_SYMBOL("OFF_OPTION_ARG", kOffModeArg)
+  MATCH_SYMBOL("ALT_COLOR2_ARG", kAltColor2Arg)
+  MATCH_SYMBOL("ALT_COLOR3_ARG", kAltColor3Arg)
+  MATCH_SYMBOL("STYLE_OPTION2_ARG", kStyleOption2Arg)
+  MATCH_SYMBOL("STYLE_OPTION3_ARG", kStyleOption3Arg)
+  MATCH_SYMBOL("IGNITION_OPTION2_ARG", kIgnitionOption2Arg)
+  MATCH_SYMBOL("RETRACTION_OPTION2_ARG", kRetractionOption2Arg)
+  MATCH_SYMBOL("RETRACTION_OPTION_ARG", kRetractionOptionArg)
+  MATCH_SYMBOL("SWING_OPTION_ARG", kSwingOptionArg)
+  MATCH_SYMBOL("IGNITION_DELAY_ARG", kIgnitionDelayArg)
+  MATCH_SYMBOL("RETRACTION_DELAY_ARG", kRetractionDelayArg)
+  MATCH_SYMBOL("LOCKUP_POSITION_ARG", kLockupPositionArg)
+  MATCH_SYMBOL("DRAG_SIZE_ARG", kDragSizeArg)
+  MATCH_SYMBOL("MELT_SIZE_ARG", kMeltSizeArg)
+  MATCH_SYMBOL("SWING_COLOR_ARG", kSwingColorArg)
+  MATCH_SYMBOL("EMITTER_SIZE_ARG", kEmitterSizeArg)
+  MATCH_SYMBOL("PREON_COLOR_ARG", kPreonColorArg)
+  MATCH_SYMBOL("PREON_OPTION_ARG", kPreonOptionArg)
+  MATCH_SYMBOL("PREON_SIZE_ARG", kPreonSizeArg)
+  MATCH_SYMBOL("RETRACTION_COLOR_ARG", kRetractionColorArg)
+  MATCH_SYMBOL("RETRACTION_COOL_DOWN_ARG", kRetractionCoolDownArg)
+  MATCH_SYMBOL("POSTOFF_COLOR_ARG", kPostOffColorArg)
+  MATCH_SYMBOL("IGNITION_COLOR_ARG", kIgnitionColorArg)
+  MATCH_SYMBOL("IGNITION_POWER_UP_ARG", kIgnitionPowerUpArg)
+#undef MATCH_SYMBOL
+  return -1;
+}
+
+static const char* ResolveGeneratedKnownStringParam(const IniBladeStyle* blade, const char* key) {
+  if (!blade || !key) return nullptr;
+  if (strcasecmp(key, "base_color") == 0) return blade->base_color;
+  if (strcasecmp(key, "alt_color") == 0) return blade->alt_color;
+  if (strcasecmp(key, "blast_color") == 0) return blade->blast_color;
+  if (strcasecmp(key, "clash_color") == 0) return blade->clash_color;
+  if (strcasecmp(key, "lockup_color") == 0) return blade->lockup_color;
+  if (strcasecmp(key, "drag_color") == 0) return blade->drag_color;
+  if (strcasecmp(key, "lb_color") == 0) return blade->lb_color;
+  if (strcasecmp(key, "stab_color") == 0) return blade->stab_color;
+  if (strcasecmp(key, "swing_color") == 0) return blade->swing_color;
+  if (strcasecmp(key, "emitter_color") == 0) return blade->emitter_color;
+  if (strcasecmp(key, "preon_color") == 0) return blade->preon_color;
+  if (strcasecmp(key, "off_color") == 0) return blade->off_color;
+  return nullptr;
+}
+
+static int BuildGeneratedStyleString(const GeneratedStyleDef* generated,
+                                     const IniBladeStyle* blade,
+                                     const IniPreset* preset,
+                                     char* buf,
+                                     int buf_size) {
+  if (!generated || !blade || !buf || buf_size <= 0) return -1;
+
+  const int kMaxArg = ini_style_args::kExtendedArgCount;
+  const char* arg_tokens[ini_style_args::kExtendedArgCount + 1];
+  for (int i = 0; i <= kMaxArg; i++) {
+    arg_tokens[i] = "~";
+  }
+  arg_tokens[0] = generated->parser_name;
+
+  char numeric_tokens[32][16];
+  int numeric_index = 0;
+  auto set_numeric = [&](int arg_index, unsigned int value) -> bool {
+    if (arg_index <= 0 || arg_index > kMaxArg || numeric_index >= 32) return false;
+    const int written = snprintf(numeric_tokens[numeric_index], sizeof(numeric_tokens[numeric_index]), "%u", value);
+    if (written < 0 || written >= static_cast<int>(sizeof(numeric_tokens[numeric_index]))) return false;
+    arg_tokens[arg_index] = numeric_tokens[numeric_index++];
+    return true;
+  };
+
+  arg_tokens[ini_style_args::kBaseColorArg] = blade->base_color;
+  arg_tokens[ini_style_args::kAltColorArg] = blade->alt_color;
+  arg_tokens[ini_style_args::kBlastColorArg] = blade->blast_color;
+  arg_tokens[ini_style_args::kClashColorArg] = blade->clash_color;
+  arg_tokens[ini_style_args::kLockupColorArg] = blade->lockup_color;
+  arg_tokens[ini_style_args::kLbColorArg] = blade->lb_color;
+  arg_tokens[ini_style_args::kDragColorArg] = blade->drag_color;
+  arg_tokens[ini_style_args::kStabColorArg] = blade->stab_color;
+  arg_tokens[ini_style_args::kEmitterColorArg] = blade->emitter_color;
+  arg_tokens[ini_style_args::kSwingColorArg] = blade->swing_color;
+  arg_tokens[ini_style_args::kPreonColorArg] = blade->preon_color;
+  arg_tokens[ini_style_args::kOffColorArg] = blade->off_color;
+
+  if (!set_numeric(ini_style_args::kIgnitionTimeArg, blade->ignition_time)) return -1;
+  if (!set_numeric(ini_style_args::kRetractionTimeArg, blade->retraction_time)) return -1;
+  if (!set_numeric(ini_style_args::kOffModeArg, BuildOffModeSelector(preset))) return -1;
+  if (!set_numeric(ini_style_args::kOffRateMsArg, BuildOffRateArg(preset))) return -1;
+
+  if (!set_numeric(ini_style_args::kFlickerDepthArg, blade->flicker_depth)) return -1;
+  if (!set_numeric(ini_style_args::kFlickerSpeedArg, PulseMillisToRpm(blade->flicker_speed))) return -1;
+  if (!set_numeric(ini_style_args::kStripeWidthArg, blade->stripe_width)) return -1;
+  if (!set_numeric(ini_style_args::kStripeSpeedArg, blade->stripe_speed)) return -1;
+  if (!set_numeric(ini_style_args::kMotionGainArg, blade->motion_gain)) return -1;
+  if (!set_numeric(ini_style_args::kNoiseMixArg, blade->noise_mix)) return -1;
+  if (!set_numeric(ini_style_args::kBaseContrastArg, blade->base_contrast)) return -1;
+  if (!set_numeric(ini_style_args::kDriftRateArg, blade->drift_rate)) return -1;
+  if (!set_numeric(ini_style_args::kWarmShiftArg, blade->warm_shift)) return -1;
+  if (!set_numeric(ini_style_args::kJitterAmountArg, blade->jitter_amount)) return -1;
+  if (!set_numeric(ini_style_args::kSparkMixArg, blade->spark_mix)) return -1;
+  if (!set_numeric(ini_style_args::kHeatRandArg, blade->heat_rand)) return -1;
+  if (!set_numeric(ini_style_args::kFireCoolingArg, blade->fire_cooling)) return -1;
+  if (!set_numeric(ini_style_args::kRainbowSpeedArg, blade->rainbow_speed)) return -1;
+
+  const int begin = generated->param_offset;
+  const int end = generated->param_offset + generated->param_count;
+  for (int i = begin; i < end; i++) {
+    const GeneratedParamDef& param = kGeneratedParamDefs[i];
+    const int arg_index = ResolveGeneratedArgIndex(param.arg_symbol);
+    if (arg_index <= 0 || arg_index > kMaxArg) {
+      continue;
+    }
+
+    const char* override = blade->LookupNamedStyleParam(param.key);
+    if (override && override[0]) {
+      arg_tokens[arg_index] = override;
+      continue;
+    }
+
+    const char* known = ResolveGeneratedKnownStringParam(blade, param.key);
+    if (known && known[0]) {
+      arg_tokens[arg_index] = known;
+    }
+  }
+
+  int written = snprintf(buf, buf_size, "%s", arg_tokens[0]);
+  if (written < 0 || written >= buf_size) {
+    buf[buf_size - 1] = '\0';
+    return -1;
+  }
+  for (int i = 1; i <= kMaxArg; i++) {
+    const int appended = snprintf(buf + written, buf_size - written, " %s", arg_tokens[i]);
+    if (appended < 0 || appended >= buf_size - written) {
+      buf[buf_size - 1] = '\0';
+      return -1;
+    }
+    written += appended;
+  }
+  return written;
+}
+
 static int BuildIniStyleWithStringArgs(const char* parser_name,
-                                       const IniPreset* p,
+                                       const IniBladeStyle* blade,
+                                       const IniPreset* preset,
                                        char* buf,
                                        int buf_size,
                                        const char* arg1,
@@ -118,15 +277,16 @@ static int BuildIniStyleWithStringArgs(const char* parser_name,
   const int written = BuildStyleString(buf, buf_size, "%s %s %s %s %s %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
-    p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
-    p->drag_color, p->stab_color, p->emitter_color,
-    p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), BuildOffRateArg(p));
-  return AppendIniTuningArgs(buf, buf_size, written, p);
+    blade->blast_color, blade->clash_color, blade->lockup_color, blade->lb_color,
+    blade->drag_color, blade->stab_color, blade->emitter_color,
+    blade->ignition_time, blade->retraction_time, blade->off_color,
+    BuildOffModeSelector(preset), BuildOffRateArg(preset));
+  return AppendIniTuningArgs(buf, buf_size, written, blade);
 }
 
 static int BuildIniStyleWithNumericArg34(const char* parser_name,
-                                         const IniPreset* p,
+                                         const IniBladeStyle* blade,
+                                         const IniPreset* preset,
                                          char* buf,
                                           int buf_size,
                                           const char* arg1,
@@ -136,15 +296,16 @@ static int BuildIniStyleWithNumericArg34(const char* parser_name,
   const int written = BuildStyleString(buf, buf_size, "%s %s %s %u %u %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
-    p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
-    p->drag_color, p->stab_color, p->emitter_color,
-    p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), BuildOffRateArg(p));
-  return AppendIniTuningArgs(buf, buf_size, written, p);
+    blade->blast_color, blade->clash_color, blade->lockup_color, blade->lb_color,
+    blade->drag_color, blade->stab_color, blade->emitter_color,
+    blade->ignition_time, blade->retraction_time, blade->off_color,
+    BuildOffModeSelector(preset), BuildOffRateArg(preset));
+  return AppendIniTuningArgs(buf, buf_size, written, blade);
 }
 
 static int BuildIniStyleWithStringArg3NumericArg4(const char* parser_name,
-                                                  const IniPreset* p,
+                                                  const IniBladeStyle* blade,
+                                                  const IniPreset* preset,
                                                   char* buf,
                                                    int buf_size,
                                                    const char* arg1,
@@ -154,116 +315,116 @@ static int BuildIniStyleWithStringArg3NumericArg4(const char* parser_name,
   const int written = BuildStyleString(buf, buf_size, "%s %s %s %s %u %s %s %s %s %s %s %s %u %u %s %u %u",
     parser_name,
     arg1, arg2, arg3, arg4,
-    p->blast_color, p->clash_color, p->lockup_color, p->lb_color,
-    p->drag_color, p->stab_color, p->emitter_color,
-    p->ignition_time, p->retraction_time, p->off_color,
-    BuildOffModeSelector(p), BuildOffRateArg(p));
-  return AppendIniTuningArgs(buf, buf_size, written, p);
+    blade->blast_color, blade->clash_color, blade->lockup_color, blade->lb_color,
+    blade->drag_color, blade->stab_color, blade->emitter_color,
+    blade->ignition_time, blade->retraction_time, blade->off_color,
+    BuildOffModeSelector(preset), BuildOffRateArg(preset));
+  return AppendIniTuningArgs(buf, buf_size, written, blade);
 }
 
 // --- Main Blade Style Build Functions ---
 
-static int BuildStandard(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_standard", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildStandard(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_standard", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildHumpFlicker(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_humpflicker", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildHumpFlicker(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_humpflicker", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildUnstable(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_unstable", p, buf, buf_size,
-    p->base_color, p->alt_color, p->blast_color, p->clash_color);
+static int BuildUnstable(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_unstable", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->blast_color, blade->clash_color);
 }
 
-static int BuildFire(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_fire", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildFire(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_fire", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildRainbow(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_rainbow", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildRainbow(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_rainbow", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildStrobe(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithNumericArg34("ini_strobe", p, buf, buf_size,
-    p->base_color, p->alt_color, p->strobe_freq, p->strobe_ms);
+static int BuildStrobe(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithNumericArg34("ini_strobe", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->strobe_freq, blade->strobe_ms);
 }
 
-static int BuildPulse(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithNumericArg34("ini_pulse", p, buf, buf_size,
-    p->base_color, p->alt_color, PulseMillisToRpm(p->pulse_rate), p->pulse_depth);
+static int BuildPulse(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithNumericArg34("ini_pulse", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, PulseMillisToRpm(blade->pulse_rate), blade->pulse_depth);
 }
 
-static int BuildRotoscope(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_rotoscope", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildRotoscope(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_rotoscope", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildGhostly(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_ghostly", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildGhostly(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_ghostly", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildLightning(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArg3NumericArg4("ini_lightning", p, buf, buf_size,
-    p->base_color, p->alt_color, p->clash_color, p->strobe_freq);
+static int BuildLightning(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArg3NumericArg4("ini_lightning", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->clash_color, blade->strobe_freq);
 }
 
-static int BuildDarksaber(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_darksaber", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildDarksaber(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_darksaber", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildKylo(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_kylo", p, buf, buf_size,
-    p->base_color, p->alt_color, p->blast_color, p->clash_color);
+static int BuildKylo(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_kylo", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->blast_color, blade->clash_color);
 }
 
-static int BuildPrequels(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_prequels", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildPrequels(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_prequels", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildSequels(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_sequels", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildSequels(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_sequels", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildAncient(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_ancient", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildAncient(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_ancient", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
-static int BuildAudioFlicker(const IniPreset* p, char* buf, int buf_size) {
-  return BuildIniStyleWithStringArgs("ini_audioflicker", p, buf, buf_size,
-    p->base_color, p->alt_color, p->swing_color, p->clash_color);
+static int BuildAudioFlicker(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildIniStyleWithStringArgs("ini_audioflicker", blade, preset, buf, buf_size,
+    blade->base_color, blade->alt_color, blade->swing_color, blade->clash_color);
 }
 
 // --- Accent/Crystal Blade Styles ---
 
-static int BuildAccentPulse(const IniPreset* p, char* buf, int buf_size) {
-  return BuildStyleString(buf, buf_size, "pulse %s %u", p->base_color, p->accent_speed);
+static int BuildAccentPulse(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildStyleString(buf, buf_size, "pulse %s %u", blade->base_color, preset->accent_speed);
 }
 
-static int BuildAccentBlink(const IniPreset* p, char* buf, int buf_size) {
-  return BuildStyleString(buf, buf_size, "blink %s %u", p->base_color, p->accent_speed);
+static int BuildAccentBlink(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildStyleString(buf, buf_size, "blink %s %u", blade->base_color, preset->accent_speed);
 }
 
-static int BuildAccentRandom(const IniPreset* p, char* buf, int buf_size) {
-  return BuildStyleString(buf, buf_size, "random %s %u", p->base_color, p->accent_speed);
+static int BuildAccentRandom(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildStyleString(buf, buf_size, "random %s %u", blade->base_color, preset->accent_speed);
 }
 
-static int BuildAccentStatic(const IniPreset* p, char* buf, int buf_size) {
-  return BuildStyleString(buf, buf_size, "static %s", p->base_color);
+static int BuildAccentStatic(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
+  return BuildStyleString(buf, buf_size, "static %s", blade->base_color);
 }
 
-static int BuildAccentColorCycle(const IniPreset* p, char* buf, int buf_size) {
+static int BuildAccentColorCycle(const IniBladeStyle* blade, const IniPreset* preset, char* buf, int buf_size) {
   return BuildStyleString(buf, buf_size, "cycle %s %s %s %s %s",
-    p->base_color, p->base_color, p->alt_color, p->blast_color, p->lockup_color);
+    blade->base_color, blade->base_color, blade->alt_color, blade->blast_color, blade->lockup_color);
 }
 
 // --- Registry Tables ---
@@ -317,42 +478,6 @@ const IniStyleEntry* FindAccentStyle(const char* name) {
   return nullptr;
 }
 
-static void CopyBladeToLegacyView(const IniBladeStyle& blade, IniPreset* preset_view) {
-  strcpy(preset_view->style_name, blade.style_name);
-  strcpy(preset_view->base_color, blade.base_color);
-  strcpy(preset_view->alt_color, blade.alt_color);
-  strcpy(preset_view->blast_color, blade.blast_color);
-  strcpy(preset_view->clash_color, blade.clash_color);
-  strcpy(preset_view->lockup_color, blade.lockup_color);
-  strcpy(preset_view->drag_color, blade.drag_color);
-  strcpy(preset_view->lb_color, blade.lb_color);
-  strcpy(preset_view->stab_color, blade.stab_color);
-  strcpy(preset_view->swing_color, blade.swing_color);
-  strcpy(preset_view->emitter_color, blade.emitter_color);
-  strcpy(preset_view->preon_color, blade.preon_color);
-  strcpy(preset_view->off_color, blade.off_color);
-  preset_view->ignition_time = blade.ignition_time;
-  preset_view->retraction_time = blade.retraction_time;
-  preset_view->flicker_depth = blade.flicker_depth;
-  preset_view->flicker_speed = blade.flicker_speed;
-  preset_view->stripe_width = blade.stripe_width;
-  preset_view->stripe_speed = blade.stripe_speed;
-  preset_view->motion_gain = blade.motion_gain;
-  preset_view->noise_mix = blade.noise_mix;
-  preset_view->base_contrast = blade.base_contrast;
-  preset_view->pulse_rate = blade.pulse_rate;
-  preset_view->pulse_depth = blade.pulse_depth;
-  preset_view->strobe_freq = blade.strobe_freq;
-  preset_view->strobe_ms = blade.strobe_ms;
-  preset_view->drift_rate = blade.drift_rate;
-  preset_view->warm_shift = blade.warm_shift;
-  preset_view->jitter_amount = blade.jitter_amount;
-  preset_view->spark_mix = blade.spark_mix;
-  preset_view->heat_rand = blade.heat_rand;
-  preset_view->fire_cooling = blade.fire_cooling;
-  preset_view->rainbow_speed = blade.rainbow_speed;
-}
-
 static uint8_t ResolveStyleBladeCount(const RuntimeConfig* config, const IniPreset* preset) {
   uint8_t style_blade_count = 1;
   if (config && config->num_blades > style_blade_count) {
@@ -383,41 +508,19 @@ static int BuildIniStyleForBlade(const IniPreset* preset,
     source_blade = 0;
   }
 
-  IniPreset blade_view = *preset;
-  CopyBladeToLegacyView(preset->blades[source_blade], &blade_view);
+  const IniBladeStyle& blade = preset->blades[source_blade];
 
-  const IniStyleEntry* style = FindIniStyle(blade_view.style_name);
+  const IniStyleEntry* style = FindIniStyle(blade.style_name);
   if (!style) {
     style = &ini_style_registry[0];
   }
 
-  // Schema-driven parser name resolution: if a generated style def exists
-  // for this style name, build the string using legacy build function then
-  // replace the parser token with the v2 name from the schema.
-  const GeneratedStyleDef* gen = FindGeneratedStyleDef(blade_view.style_name);
+  const GeneratedStyleDef* gen = FindGeneratedStyleDef(blade.style_name);
   if (gen) {
-    int result = style->build(&blade_view, buf, buf_size);
-    if (result <= 0) return result;
-
-    // Replace legacy parser token (first space-delimited word) with v2 name.
-    const char* space = strchr(buf, ' ');
-    if (!space) return result;
-    int old_prefix_len = static_cast<int>(space - buf);
-    int new_prefix_len = static_cast<int>(strlen(gen->parser_name));
-    int tail_len = static_cast<int>(strlen(space));
-    int new_total = new_prefix_len + tail_len;
-    if (new_total >= buf_size) {
-      buf[buf_size - 1] = '\0';
-      return -1;
-    }
-    if (new_prefix_len != old_prefix_len) {
-      memmove(buf + new_prefix_len, space, tail_len + 1);
-    }
-    memcpy(buf, gen->parser_name, new_prefix_len);
-    return new_total;
+    return BuildGeneratedStyleString(gen, &blade, preset, buf, buf_size);
   }
 
-  return style->build(&blade_view, buf, buf_size);
+  return style->build(&blade, preset, buf, buf_size);
 }
 
 #endif // PROPS_STYLE_REGISTRY_H

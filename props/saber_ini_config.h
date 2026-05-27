@@ -20,9 +20,34 @@ inline constexpr const char kBladeOutBankArg[] = "blade_out";
 inline constexpr const char kBeginIniMarker[] = "---BEGIN_INI---";
 inline constexpr const char kEndIniMarker[] = "---END_INI---";
 inline constexpr uint32_t kIniLoadRetryDisabled = UINT32_MAX;
+inline constexpr uint32_t kIniLoadRetryMs = 1000;
 
 inline int NormalizeHardwareCountForProfile(int value) {
   return value > 0 ? value : 1;
+}
+
+inline int ResolveHardwareProfileCount(int configured_count, int fallback_count) {
+  return configured_count > 0 ? configured_count : NormalizeHardwareCountForProfile(fallback_count);
+}
+
+inline int ResolveHardwareBladeCountForProfile() {
+#ifdef NUM_BLADES
+  return NormalizeHardwareCountForProfile(NUM_BLADES);
+#elif defined(INI_NUM_BLADES)
+  return NormalizeHardwareCountForProfile(INI_NUM_BLADES);
+#else
+  return NormalizeHardwareCountForProfile(ResolveRuntimeDefaultBladeCount());
+#endif
+}
+
+inline int ResolveHardwareButtonCountForProfile() {
+#ifdef NUM_BUTTONS
+  return NormalizeHardwareCountForProfile(NUM_BUTTONS);
+#elif defined(INI_DEFAULT_NUM_BUTTONS)
+  return NormalizeHardwareCountForProfile(INI_DEFAULT_NUM_BUTTONS);
+#else
+  return 1;
+#endif
 }
 
 inline void BuildHardwareProfileLine(int num_blades,
@@ -76,6 +101,10 @@ inline bool ShouldAttemptIniLoad(bool force,
   return static_cast<int32_t>(now_ms - next_attempt_ms) >= 0;
 }
 
+inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
+  return now_ms + kIniLoadRetryMs;
+}
+
 #ifndef PROFFIE_TEST
 
 #include "prop_base.h"
@@ -100,7 +129,7 @@ inline bool ShouldAttemptIniLoad(bool force,
 class SaberIniConfig : public PropBase {
 public:
   SaberIniConfig() : PropBase(), ini_loaded_(false), blade_out_loaded_(false), active_lockup_slot_(-1) {
-    blade_in_config_ = nullptr;
+    blade_in_config_ = &blade_in_config_storage_;
     blade_out_config_ = nullptr;
     config_ = nullptr;
   }
@@ -109,22 +138,14 @@ public:
 
   void Setup() override {
     PropBase::Setup();
-    blade_in_config_ = new RuntimeConfig();
+    blade_in_config_->SetDefaults();
+    ApplyButtonProfileDefaults(blade_in_config_);
     blade_out_config_ = ShouldAllocateBladeOutConfig() ? new RuntimeConfig() : nullptr;
-    if (blade_in_config_) {
-      blade_in_config_->SetDefaults();
-      ApplyButtonProfileDefaults(blade_in_config_);
-    } else {
-      STDOUT.println("SaberIni: Runtime config allocation failed (blade_in).");
-    }
     if (blade_out_config_) {
       blade_out_config_->SetDefaults();
       ApplyButtonProfileDefaults(blade_out_config_);
-    } else if (ShouldAllocateBladeOutConfig()) {
-      STDOUT.println("SaberIni: Runtime config allocation failed (blade_out).");
     }
     config_ = blade_in_config_;
-    LoadIniConfig();
     LoadBladeOutConfig();
     SelectActiveConfigForBladeState();
     ApplyGlobalConfig();
@@ -198,8 +219,10 @@ public:
 
     if (!strcmp(cmd, kGetHardwareProfileCmd)) {
       RuntimeConfig* profile_cfg = blade_in_config_ ? blade_in_config_ : config_;
-      const int num_blades = profile_cfg ? profile_cfg->num_blades : 1;
-      const int num_buttons = profile_cfg ? profile_cfg->global.num_buttons : 1;
+      const int num_blades = ResolveHardwareBladeCountForProfile();
+      const int num_buttons = ResolveHardwareProfileCount(
+          profile_cfg ? profile_cfg->global.num_buttons : 0,
+          ResolveHardwareButtonCountForProfile());
 #ifdef BLADE_DETECT_PIN
       constexpr bool has_blade_detect = true;
       const bool blade_detected = blade_detected_;
@@ -230,12 +253,31 @@ public:
       }
       return false;
     }
-    if (!config_) return false;
+    if (!config_) {
+      STDOUT.println("SaberIni: Event2 config_=NULL");
+      return false;
+    }
     const IniAction* action_map = IsOn() ? config_->action_map_on : config_->action_map_off;
     int slot = ResolveButtonSlot(button, event, modifiers, config_->global.num_buttons);
-    if (slot < 0) return false;
+    if (slot < 0) {
+      STDOUT.print("SaberIni: Event2 slot=-1 btn=");
+      STDOUT.print((int)button);
+      STDOUT.print(" evt=");
+      STDOUT.print((int)event);
+      STDOUT.print(" num_buttons=");
+      STDOUT.println((int)config_->global.num_buttons);
+      return false;
+    }
     IniAction action = action_map[slot];
-    if (action == ACTION_NONE) return false;
+    if (action == ACTION_NONE) {
+      STDOUT.print("SaberIni: Event2 ACTION_NONE slot=");
+      STDOUT.print(slot);
+      STDOUT.print(" num_buttons=");
+      STDOUT.print((int)config_->global.num_buttons);
+      STDOUT.print(" ini_loaded=");
+      STDOUT.println(ini_loaded_);
+      return false;
+    }
     if (battle_mode_ && (action == ACTION_LOCKUP || action == ACTION_DRAG || action == ACTION_MELT || action == ACTION_STAB || action == ACTION_LOCKUP_OR_DRAG)) return true;
     if (IsSustainedAction(action) && IsOn()) active_lockup_slot_ = slot;
     ExecuteAction(action, this);
@@ -250,7 +292,7 @@ public:
       }
       DetectTwist();
     }
-    if (!ini_loaded_ && millis() > 3000) LoadIniConfig(); 
+    if (!ini_loaded_ && millis() > 10000) LoadIniConfig(); // DIAG: 10s delay
   }
 
   void Off(OffType off_type = OFF_NORMAL, EffectLocation location = EffectLocation()) override {
@@ -284,6 +326,7 @@ public:
   void SayBatteryLevel() { talkie.SayNumber((int)(battery_monitor.battery_percent())); }
 
 private:
+  RuntimeConfig blade_in_config_storage_;
   RuntimeConfig* config_;
   RuntimeConfig* blade_in_config_;
   RuntimeConfig* blade_out_config_;
@@ -371,30 +414,40 @@ private:
   void LoadIniConfig(bool force = false) {
     const uint32_t now = millis();
     if (!ShouldAttemptIniLoad(force, ini_loaded_, blade_in_config_ != nullptr, now, next_ini_load_attempt_ms_)) return;
-    next_ini_load_attempt_ms_ = now + 1000;
+    next_ini_load_attempt_ms_ = now + kIniLoadRetryMs;
     STDOUT.println("SaberIni: Loading...");
     if (!blade_in_config_) return;
 
+    STDOUT.println("SaberIni: LOCK_SD");
     LOCK_SD(true);
+    STDOUT.println("SaberIni: LSFS::Exists");
     if (!LSFS::Exists(INI_CONFIG_FILE)) {
       LOCK_SD(false);
-      STDOUT.println("SaberIni: INI missing");
+      STDOUT.println("SaberIni: INI missing (retrying)");
       ini_loaded_ = false;
-      next_ini_load_attempt_ms_ = kIniLoadRetryDisabled;
+      next_ini_load_attempt_ms_ = ResolveNextIniLoadAttemptOnMissing(now);
       return;
     }
 
+    STDOUT.println("SaberIni: INI found");
     blade_in_config_->SetDefaults();
     ApplyButtonProfileDefaults(blade_in_config_);
+    STDOUT.println("SaberIni: IniLoader::Load");
     const bool loaded = IniLoader::Load(INI_CONFIG_FILE, blade_in_config_);
+    STDOUT.println("SaberIni: IniLoader::Load done");
     LOCK_SD(false);
 
     if (loaded) {
+      STDOUT.print("SaberIni: presets=");
+      STDOUT.println(blade_in_config_->num_presets);
       ApplyGlobalConfig();
+      STDOUT.println("SaberIni: RegeneratePresetBanks");
       RegeneratePresetBanks();
+      STDOUT.println("SaberIni: RegeneratePresetBanks done");
       ini_loaded_ = true;
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
+      SetPreset(0, false);
     } else {
       STDOUT.println("SaberIni: LOAD_FAIL");
       ini_loaded_ = false;
@@ -429,7 +482,15 @@ private:
       strcpy(built_ini, save_dir);
       if (built_ini[0] && built_ini[strlen(built_ini)-1] != '/') strcat(built_ini, "/");
       strcat(built_ini, INI_BUILT_PRESETS_FILE);
-      PresetBuilder::WritePresetsFile(config_, built_ini);
+      STDOUT.print("SaberIni: WritePresetsFile[");
+      STDOUT.print((int)i);
+      STDOUT.print("]=");
+      STDOUT.println(built_ini);
+      bool ok = PresetBuilder::WritePresetsFile(config_, built_ini);
+      STDOUT.print("SaberIni: WritePresetsFile[");
+      STDOUT.print((int)i);
+      STDOUT.print("]=");
+      STDOUT.println(ok ? "OK" : "FAIL");
     }
   }
 

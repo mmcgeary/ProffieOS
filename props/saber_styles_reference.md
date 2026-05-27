@@ -43,24 +43,25 @@ The firmware INI parser recognises two kinds of per-blade keys:
 
 ## Main Blade Styles
 
-| Style Name   | Description                              |
-|-------------|------------------------------------------|
-| standard    | Classic solid color blade                 |
-| audioflicker| Audio-reactive flicker blade              |
-| humpflicker | Subtle hump flicker blade                 |
-| unstable    | Flickering/crackling unstable blade       |
-| fire        | Flame animated blade                      |
-| rainbow     | Cycling rainbow colors                    |
-| strobe      | Strobing/flicker blade                    |
-| pulse       | Pulsing glow blade                        |
-| rotoscope   | Original trilogy rotoscope look           |
-| ghostly     | Transparent/ethereal blade                |
-| lightning   | Lightning/electricity animated            |
-| darksaber   | Darksaber style (high contrast, dark edges)|
-| kylo        | Crossguard unstable variant               |
-| prequels    | Prequel-era smooth blade                  |
-| sequels     | Sequel-era with slight flicker            |
-| ancient     | Ancient/Jedi temple style                 |
+| Style Name | Parser token | Description |
+|------------|--------------|-------------|
+| `standard` | `ini2_standard` | Classic solid blade with responsive effects |
+| `audio_flicker` | `ini2_audio_flicker` | Two-color audio-reactive flicker core |
+| `audioflicker` | `ini2_audio_flicker` | Legacy alias for `audio_flicker` |
+| `hump_flicker` | `ini2_hump_flicker` | Hump-flicker core with responsive effects |
+| `pulsing_stripes` | `ini2_pulsing_stripes` | Stripe motion + pulsing base |
+| `energy` | `ini2_energy` | Brown-noise + stripe energy core |
+| `fire_unstable` | `ini2_fire_unstable` | Unstable fire core |
+| `plasma_blade` | `ini2_plasma_blade` | Multi-layer plasma stripes/fire blend |
+| `rainbow_blade` | `ini2_rainbow_blade` | Rainbow core with responsive effects |
+| `energy_blade` | `ini2_energy_blade` | Center-remapped energy stripe core |
+| `lava_blade` | `ini2_lava_blade` | Twisting lava stripe core |
+| `sparkle_blade` | `ini2_sparkle_blade` | Sparkle core |
+| `fire_blade` | `ini2_fire_blade` | StyleFire core |
+| `pulse_accent` | `ini2_pulse_accent` | Pulse accent pattern |
+| `blink_accent` | `ini2_blink_accent` | Blink accent pattern |
+| `random_blink_accent` | `ini2_random_blink_accent` | Random blink accent pattern |
+| `color_cycle_accent` | `ini2_color_cycle_accent` | Color-cycle accent pattern |
 
 ## Hardcoded INI Keys (`bladeN_<key>`)
 
@@ -129,23 +130,31 @@ named-parameter mechanism and **must** use the `bladeN_param.<name>` syntax.
 | `param.preon_option` | int | Pre-on animation variant |
 | `param.off_option` | int | Off-state animation variant |
 
-### Additional Params for `audioflicker`
+### Style-Specific Schema Params (v2 library)
 
-The `audioflicker` style includes the secondary parameter set. These keys
-are **only** accepted when the active style is `audioflicker` (or any future
-style with `include_secondary: true` in the schema).
+These keys are valid only for the matching style (except `audioflicker`, which
+is an alias of `audio_flicker`).
 
-| Param key | Type | Description |
-|-----------|------|-------------|
-| `param.alt_color2` | color | Tertiary accent color |
-| `param.alt_color3` | color | Quaternary accent color |
-| `param.style_option2` | int | Second style variant selector |
-| `param.style_option3` | int | Third style variant selector |
-| `param.ignition_option2` | int | Second ignition animation variant |
-| `param.retraction_option2` | int | Second retraction animation variant |
+| Style | Params (`bladeN_param.<key>`) |
+|-------|-------------------------------|
+| `audio_flicker` / `audioflicker` | `flicker_mix` |
+| `hump_flicker` | `hump_amount` |
+| `pulsing_stripes` | `stripe_width`, `stripe_speed`, `pulse_rate` |
+| `energy` | `stripe_width`, `stripe_speed`, `noise_depth` |
+| `fire_unstable` | `noise_depth`, `fire_cooling`, `fire_sparking` |
+| `plasma_blade` | `plasma_width`, `plasma_speed`, `inner_width`, `inner_speed` |
+| `energy_blade` | `center_width`, `center_speed`, `edge_mix` |
+| `lava_blade` | `wave_speed`, `twist_amount`, `pulse_rate` |
+| `sparkle_blade` | `spark_mix` |
+| `fire_blade` | `fire_mix` |
+| `pulse_accent` | `pulse_rate`, `inout_pulse_rate` |
+| `blink_accent` | `blink_ms`, `blink_duty`, `inout_blink_ms`, `inout_blink_duty` |
+| `random_blink_accent` | `blink_rate`, `inout_blink_rate` |
+| `color_cycle_accent` | `segment_size`, `off_rpm`, `on_size`, `on_rpm`, `fade_ms` |
 
-As more styles are added to the schema generator their style-specific
-parameters will appear here automatically.
+`alt_color2` and `alt_color3` are also available on styles with
+`include_secondary: true` in the schema (`energy`, `fire_unstable`,
+`plasma_blade`, `energy_blade`, `lava_blade`).
 
 ## Preset Off-Mode Controls
 

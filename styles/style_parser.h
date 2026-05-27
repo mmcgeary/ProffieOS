@@ -147,13 +147,58 @@ NamedStyle named_styles[] = {
   { "ini_audioflicker", IniStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
     "INI template style, audio flicker base"
   },
-  { "ini2_standard", IniStyleAllocatorPtr<IniBaseStandardV2>(),
+#endif
+  { "ini2_standard", IniDirectStyleAllocatorPtr<IniBaseStandardV2>(),
     "INI v2 template style, standard base"
   },
-  { "ini2_audioflicker", IniStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
+  { "ini2_audioflicker", IniDirectStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
+    "INI v2 template style, audio flicker base (legacy alias)"
+  },
+  { "ini2_audio_flicker", IniDirectStyleAllocatorPtr<IniBaseAudioFlickerV2>(),
     "INI v2 template style, audio flicker base"
   },
-#endif
+  { "ini2_hump_flicker", IniDirectStyleAllocatorPtr<IniBaseHumpFlickerV2>(),
+    "INI v2 template style, hump flicker base"
+  },
+  { "ini2_pulsing_stripes", IniDirectStyleAllocatorPtr<IniBasePulsingStripesV2>(),
+    "INI v2 template style, pulsing stripes base"
+  },
+  { "ini2_energy", IniDirectStyleAllocatorPtr<IniBaseEnergyV2>(),
+    "INI v2 template style, energy base"
+  },
+  { "ini2_fire_unstable", IniDirectStyleAllocatorPtr<IniBaseFireUnstableV2>(),
+    "INI v2 template style, unstable fire base"
+  },
+  { "ini2_plasma_blade", IniDirectStyleAllocatorPtr<IniBasePlasmaBladeV2>(),
+    "INI v2 template style, plasma blade base"
+  },
+  { "ini2_rainbow_blade", IniDirectStyleAllocatorPtr<IniBaseRainbowBladeV2>(),
+    "INI v2 template style, rainbow blade base"
+  },
+  { "ini2_energy_blade", IniDirectStyleAllocatorPtr<IniBaseEnergyBladeV2>(),
+    "INI v2 template style, energy blade base"
+  },
+  { "ini2_lava_blade", IniDirectStyleAllocatorPtr<IniBaseLavaBladeV2>(),
+    "INI v2 template style, lava blade base"
+  },
+  { "ini2_sparkle_blade", IniDirectStyleAllocatorPtr<IniBaseSparkleBladeV2>(),
+    "INI v2 template style, sparkle blade base"
+  },
+  { "ini2_fire_blade", IniDirectStyleAllocatorPtr<IniBaseFireBladeV2>(),
+    "INI v2 template style, fire blade base"
+  },
+  { "ini2_pulse_accent", IniDirectStyleAllocatorPtr<IniBasePulseAccentV2>(),
+    "INI v2 template style, pulse accent base"
+  },
+  { "ini2_blink_accent", IniDirectStyleAllocatorPtr<IniBaseBlinkAccentV2>(),
+    "INI v2 template style, blink accent base"
+  },
+  { "ini2_random_blink_accent", IniDirectStyleAllocatorPtr<IniBaseRandomBlinkAccentV2>(),
+    "INI v2 template style, random blink accent base"
+  },
+  { "ini2_color_cycle_accent", IniDirectStyleAllocatorPtr<IniBaseColorCycleAccentV2>(),
+    "INI v2 template style, color cycle accent base"
+  },
   { "builtin", &builtin_preset_allocator,
     // TODO: Support multiple argument templates.
     "builtin preset styles, "

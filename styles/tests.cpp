@@ -788,8 +788,24 @@ void testMaxUsedArgument(const char* from, int expected) {
   }
 }
 
+void testStylePresence(const char* name, bool expected_present) {
+  fprintf(stderr, "testStylePresence(%s)\n", name);
+  const bool present = style_parser.FindStyle(name) != nullptr;
+  if (present != expected_present) {
+    fprintf(stderr, "Expected style '%s' present=%d but got %d\n",
+            name, expected_present ? 1 : 0, present ? 1 : 0);
+    exit(1);
+  }
+}
+
 
 void test_argument_parsing() {
+#ifdef DISABLE_BASIC_PARSER_STYLES
+  testStylePresence("standard", false);
+  testStylePresence("ini2_standard", true);
+  testStylePresence("ini2_audio_flicker", true);
+#else
+  testStylePresence("standard", true);
   testGetArg("standard", 0, "standard");
   testGetArg("standard", 1, "0,65535,65535");
   testGetArg("standard ~", 1, "0,65535,65535");
@@ -826,6 +842,7 @@ void test_argument_parsing() {
   testMaxUsedArgument("charging", 0);
   testMaxUsedArgument("rainbow", 2);
   testMaxUsedArgument("fire", 2);
+#endif
 
   testGetArg("builtin 0 1", 0, "builtin");
   testGetArg("builtin 0 1", 1, "0");
@@ -875,6 +892,30 @@ void test_argument_parsing() {
   CHECK_COLOR(TestRgbArgColors[1], 0, 0, 1, 0);
   CHECK_COLOR(TestRgbArgColors[2], 0, 1, 0, 0);
   CHECK_COLOR(TestRgbArgColors[3], 7, 8, 9, 0);
+}
+
+void test_schema_v2_off_color_argument_usage() {
+  testStylePresence("ini2_pulse_accent", true);
+  testStylePresence("ini2_blink_accent", true);
+  testStylePresence("ini2_random_blink_accent", true);
+  testStylePresence("ini2_color_cycle_accent", true);
+
+  if (!style_parser.UsesArgument("ini2_pulse_accent", ini_style_args::kOffColorArg)) {
+    fprintf(stderr, "ini2_pulse_accent should consume OFF_COLOR_ARG.\n");
+    exit(1);
+  }
+  if (!style_parser.UsesArgument("ini2_blink_accent", ini_style_args::kOffColorArg)) {
+    fprintf(stderr, "ini2_blink_accent should consume OFF_COLOR_ARG.\n");
+    exit(1);
+  }
+  if (!style_parser.UsesArgument("ini2_random_blink_accent", ini_style_args::kOffColorArg)) {
+    fprintf(stderr, "ini2_random_blink_accent should consume OFF_COLOR_ARG.\n");
+    exit(1);
+  }
+  if (!style_parser.UsesArgument("ini2_color_cycle_accent", ini_style_args::kOffColorArg)) {
+    fprintf(stderr, "ini2_color_cycle_accent should consume OFF_COLOR_ARG.\n");
+    exit(1);
+  }
 }
 
 void test_gradient() {
@@ -967,4 +1008,5 @@ int main() {
   test_style2();
   test_style3();
   test_argument_parsing();
+  test_schema_v2_off_color_argument_usage();
 }

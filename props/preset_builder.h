@@ -16,25 +16,15 @@ public:
                              uint8_t blade_idx,
                              char* buf,
                              int buf_size) {
-    int len = BuildIniStyleForBlade(preset, blade_idx, buf, buf_size);
-    if (len > 0) {
-      return len;
-    }
-
-    if (blade_idx == 0) {
-      const IniStyleEntry* style = FindIniStyle(preset->style_name);
-      if (!style) {
-        style = &ini_style_registry[0];  // fallback to "standard"
-      }
-      return style->build(preset, buf, buf_size);
-    }
-
-    return len;
+    return BuildIniStyleForBlade(preset, blade_idx, buf, buf_size);
   }
 
   static bool WritePresetsFile(const RuntimeConfig* config, const char* filename) {
     LOCK_SD(true);
+    STDOUT.print("PB: OpenForWrite=");
+    STDOUT.println(filename);
     File f = LSFS::OpenForWrite(filename);
+    STDOUT.println(f ? "PB: open OK" : "PB: open FAILED");
     if (!f) {
       LOCK_SD(false);
       return false;
@@ -46,6 +36,8 @@ public:
     f.print("\n");
 
     for (int i = 0; i < config->num_presets; i++) {
+      STDOUT.print("PB: preset=");
+      STDOUT.println(i);
       const IniPreset* p = &config->presets[i];
 
       f.print("new_preset\n");
@@ -76,8 +68,9 @@ public:
       f.print("variation=0\n");
     }
     f.print("end\n");
-
+    STDOUT.println("PB: f.close");
     f.close();
+    STDOUT.println("PB: done");
     LOCK_SD(false);
     return true;
   }

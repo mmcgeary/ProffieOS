@@ -248,9 +248,6 @@ private:
         if (blade_idx + 1 > p->blade_count) {
           p->blade_count = blade_idx + 1;
         }
-        if (blade_idx == 0) {
-          p->CopyBlade0ToLegacyView();
-        }
       }
       return;
     }
@@ -274,7 +271,6 @@ private:
     } else if (strcasecmp(key, "off_rate_ms") == 0) {
       p->off_rate_ms = constrain(atoi(val), 10, 60000);
     } else if (ParseBladeField(key, val, &p->blades[0])) {
-      p->CopyBlade0ToLegacyView();
     }
   }
 

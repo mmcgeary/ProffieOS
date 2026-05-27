@@ -2,13 +2,18 @@
 #define STYLES_INI_STYLE_TEMPLATES_H
 
 #include "ini_style_arg_ids.h"
+#include "../functions/center_dist.h"
 #include "../functions/int_arg.h"
 #include "../functions/mult.h"
 #include "../functions/scale.h"
+#include "../functions/sin.h"
+#include "../functions/twist_angle.h"
 #include "../transitions/fade.h"
 #include "../transitions/wipe.h"
 #include "audio_flicker.h"
+#include "blinking.h"
 #include "brown_noise_flicker.h"
+#include "color_cycle.h"
 #include "color_select.h"
 #include "fire.h"
 #include "hump_flicker.h"
@@ -20,9 +25,11 @@
 #include "random_blink.h"
 #include "random_flicker.h"
 #include "random_per_led_flicker.h"
+#include "remap.h"
 #include "responsive_styles.h"
 #include "rgb_arg.h"
 #include "rotate_color.h"
+#include "sparkle.h"
 #include "strobe.h"
 #include "stripes.h"
 #include "style_ptr.h"
@@ -256,20 +263,202 @@ StyleAllocator IniStyleAllocatorPtr() {
   return StylePtr<IniPrimaryBlade<BASE>>();
 }
 
-// --- Schema v2 base templates ---
-// These use the same argument symbols as the generated schema definitions
-// (BASE_COLOR_ARG, ALT_COLOR_ARG, etc.) via the existing ini_args namespace.
-// They intentionally reuse IniStyleAllocatorPtr<>; only the BASE aliases differ.
+// --- Schema v2 templates ---
+template<class BASE, class OUT_TR = TrWipe<300>, class IN_TR = TrWipeIn<500>, class OFF = Rgb<0, 0, 0>>
+using IniResponsiveBladeV2 =
+    InOutTr<
+        Layers<
+            BASE,
+            ResponsiveLockupL<RgbArg<ini_args::kLockupColorArg, White>, TrInstant, TrFade<100>, Int<26000>>,
+            ResponsiveLightningBlockL<RgbArg<ini_args::kLbColorArg, White>>,
+            ResponsiveMeltL<Mix<TwistAngle<>, Red, Yellow>>,
+            ResponsiveDragL<RgbArg<ini_args::kDragColorArg, White>>,
+            ResponsiveClashL<RgbArg<ini_args::kClashColorArg, White>, TrInstant, TrFade<200>, Int<26000>>,
+            ResponsiveBlastL<RgbArg<ini_args::kBlastColorArg, White>>,
+            ResponsiveBlastWaveL<RgbArg<ini_args::kBlastColorArg, White>>,
+            ResponsiveBlastFadeL<RgbArg<ini_args::kBlastColorArg, White>>,
+            ResponsiveStabL<RgbArg<ini_args::kStabColorArg, White>>>,
+        OUT_TR,
+        IN_TR,
+        OFF>;
 
-// Intentionally matches IniBaseStandard for now; schema-v2 can diverge later.
-using IniBaseStandardV2 = RgbArg<ini_args::kBaseColorArg, CYAN>;
+using IniBaseStandardV2 = IniResponsiveBladeV2<RgbArg<ini_args::kBaseColorArg, Blue>>;
 
 using IniBaseAudioFlickerV2 =
-    AudioFlicker<
-        RgbArg<ini_args::kBaseColorArg, Blue>,
-        Mix<
-            IntArg<ini_args::kBaseContrastArg, 4096>,
+    IniResponsiveBladeV2<
+        AudioFlicker<
             RgbArg<ini_args::kBaseColorArg, Blue>,
-            White>>;
+            RgbArg<ini_args::kAltColorArg, White>>>;
+
+using IniBaseHumpFlickerV2 =
+    IniResponsiveBladeV2<
+        Layers<
+            RgbArg<ini_args::kBaseColorArg, Magenta>,
+            AlphaL<
+                RgbArg<ini_args::kAltColorArg, White>,
+                Mult<
+                    HumpFlickerF<50>,
+                    IntArg<ini_args::kStyleOptionArg, 32768>>>>>;
+
+using IniBasePulsingStripesV2 =
+    IniResponsiveBladeV2<
+        StripesX<
+            IntArg<ini_args::kStyleOptionArg, 3000>,
+            IntArg<ini_args::kIgnitionOptionArg, -3000>,
+            RgbArg<ini_args::kBaseColorArg, Blue>,
+            Mix<Int<12000>, Black, RgbArg<ini_args::kBaseColorArg, Blue>>,
+            PulsingX<
+                RgbArg<ini_args::kBaseColorArg, Blue>,
+                Mix<Int<8000>, Black, RgbArg<ini_args::kBaseColorArg, Blue>>,
+                IntArg<ini_args::kSwingOptionArg, 1400>>>>;
+
+using IniBaseEnergyV2 =
+    IniResponsiveBladeV2<
+        AudioFlicker<
+            BrownNoiseFlicker<
+                RgbArg<ini_args::kAltColorArg, White>,
+                StripesX<
+                    IntArg<ini_args::kStyleOptionArg, 5000>,
+                    IntArg<ini_args::kIgnitionOptionArg, -300>,
+                    Mix<Int<7710>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                    Mix<Int<25700>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                    Mix<Int<1285>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                    Mix<Int<16384>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>>,
+                300>,
+            Mix<Int<6425>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>, White>>>;
+
+using IniBaseFireUnstableV2 =
+    IniResponsiveBladeV2<
+        StaticFire<
+            BrownNoiseFlicker<
+                RgbArg<ini_args::kBaseColorArg, Red>,
+                RandomPerLEDFlicker<
+                    Mix<Int<3213>, Black, RgbArg<ini_args::kAltColorArg, Orange>>,
+                    Mix<Int<7710>, Black, RgbArg<ini_args::kAltColor2Arg, Orange>>>,
+                300>,
+            Mix<Int<10280>, Black, RgbArg<ini_args::kAltColor3Arg, Yellow>>,
+            0,
+            6,
+            10,
+            1000,
+            2>>;
+
+using IniBasePlasmaBladeV2 =
+    IniResponsiveBladeV2<
+        StaticFire<
+            Mix<
+                SmoothStep<Int<2000>, Int<-2000>>,
+                StripesX<
+                    IntArg<ini_args::kStyleOptionArg, 16000>,
+                    IntArg<ini_args::kIgnitionOptionArg, -3900>,
+                    RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>,
+                    Mix<Int<8172>, RgbArg<ini_args::kAltColorArg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                    Mix<Int<16384>, RgbArg<ini_args::kAltColorArg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                    StripesX<
+                        IntArg<ini_args::kStyleOption2Arg, 2500>,
+                        IntArg<ini_args::kStyleOption3Arg, -3500>,
+                        RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>,
+                        RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>,
+                        RgbArg<ini_args::kAltColor2Arg, Blue>,
+                        Mix<Int<16000>, RgbArg<ini_args::kAltColorArg, Black>, RgbArg<ini_args::kBaseColorArg, Rgb<100, 100, 150>>>,
+                        RgbArg<ini_args::kAltColor3Arg, DodgerBlue>>>,
+                White>,
+            Blue,
+            0,
+            6,
+            1,
+            2000,
+            3>>;
+
+using IniBaseRainbowBladeV2 = IniResponsiveBladeV2<Rainbow>;
+
+using IniBaseEnergyBladeV2 =
+    IniResponsiveBladeV2<
+        Remap<
+            CenterDistF<>,
+            StripesX<
+                IntArg<ini_args::kStyleOptionArg, 2000>,
+                IntArg<ini_args::kIgnitionOptionArg, -3000>,
+                AudioFlicker<RgbArg<ini_args::kAltColorArg, White>, RgbArg<ini_args::kBaseColorArg, Blue>>,
+                Mix<Int<3855>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Blue>>,
+                AudioFlicker<RgbArg<ini_args::kBaseColorArg, Blue>, RgbArg<ini_args::kAltColorArg, White>>,
+                Rgb<50, 50, 75>>>>;
+
+using IniBaseLavaBladeV2 =
+    IniResponsiveBladeV2<
+        StripesX<
+            Sin<IntArg<ini_args::kStyleOptionArg, 4>, Int<3000>, Int<6000>>,
+            Scale<TwistAngle<>, Int<-50>, Int<-100>>,
+            PulsingX<
+                Mix<Int<6425>, RgbArg<ini_args::kBaseColorArg, Blue>, RgbArg<ini_args::kAltColorArg, White>>,
+                Mix<Int<2570>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Blue>>,
+                IntArg<ini_args::kIgnitionOptionArg, 3000>>,
+            Mix<Int<7710>, Black, RgbArg<ini_args::kBaseColorArg, Blue>>,
+            PulsingX<
+                Mix<Int<6425>, RgbArg<ini_args::kAltColor2Arg, Black>, RgbArg<ini_args::kBaseColorArg, Blue>>,
+                Mix<Int<6425>, RgbArg<ini_args::kBaseColorArg, Blue>, RgbArg<ini_args::kAltColorArg, White>>,
+                IntArg<ini_args::kSwingOptionArg, 2000>>>>;
+
+using IniBaseSparkleBladeV2 =
+    IniResponsiveBladeV2<Sparkle<RgbArg<ini_args::kBaseColorArg, Blue>, RgbArg<ini_args::kAltColorArg, White>>>;
+
+using IniBaseFireBladeV2 =
+    IniResponsiveBladeV2<
+        StyleFire<RgbArg<ini_args::kBaseColorArg, Blue>, RgbArg<ini_args::kAltColorArg, Cyan>>,
+        TrWipe<300>,
+        TrFade<500>>;
+
+using IniBasePulseAccentV2 =
+    IniResponsiveBladeV2<
+        PulsingX<
+            RgbArg<ini_args::kBaseColorArg, Blue>,
+            RgbArg<ini_args::kAltColorArg, Red>,
+            IntArg<ini_args::kStyleOptionArg, 400>>,
+        TrFade<300>,
+        TrFade<500>,
+        PulsingX<
+            RgbArg<ini_args::kOffColorArg, Black>,
+            Mix<Int<16384>, Black, RgbArg<ini_args::kOffColorArg, Black>>,
+            IntArg<ini_args::kStyleOption2Arg, 1600>>>;
+
+using IniBaseBlinkAccentV2 =
+    IniResponsiveBladeV2<
+        BlinkingX<
+            RgbArg<ini_args::kBaseColorArg, Red>,
+            RgbArg<ini_args::kAltColorArg, Blue>,
+            IntArg<ini_args::kStyleOptionArg, 1000>,
+            IntArg<ini_args::kIgnitionOptionArg, 500>>,
+        TrFade<300>,
+        TrFade<500>,
+        BlinkingX<
+            RgbArg<ini_args::kOffColorArg, Black>,
+            Black,
+            IntArg<ini_args::kStyleOption2Arg, 2000>,
+            IntArg<ini_args::kStyleOption3Arg, 500>>>;
+
+using IniBaseRandomBlinkAccentV2 =
+    IniResponsiveBladeV2<
+        RandomBlinkX<
+            IntArg<ini_args::kStyleOptionArg, 6000>,
+            RgbArg<ini_args::kBaseColorArg, White>,
+            RgbArg<ini_args::kAltColorArg, Black>>,
+        TrFade<300>,
+        TrFade<500>,
+        RandomBlinkX<
+            IntArg<ini_args::kStyleOption2Arg, 3000>,
+            RgbArg<ini_args::kOffColorArg, Black>,
+            Black>>;
+
+using IniBaseColorCycleAccentV2 =
+    IniResponsiveBladeV2<
+        ColorCycle<RgbArg<ini_args::kBaseColorArg, Blue>, 25, 100, RgbArg<ini_args::kAltColorArg, Cyan>, 100, 3000, 5000>,
+        TrFade<300>,
+        TrFade<300>,
+        ColorCycle<RgbArg<ini_args::kOffColorArg, Black>, 25, 100, RgbArg<ini_args::kAltColorArg, Cyan>, 100, 3000, 5000>>;
+
+template<class STYLE>
+StyleAllocator IniDirectStyleAllocatorPtr() {
+  return StylePtr<STYLE>();
+}
 
 #endif  // STYLES_INI_STYLE_TEMPLATES_H

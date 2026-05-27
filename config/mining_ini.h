@@ -10,6 +10,7 @@ const unsigned int maxLedsPerStrip = 144;
 #define ENABLE_WS2811
 #define ENABLE_SD
 #define NO_REPEAT_RANDOM
+#define DISABLE_BASIC_PARSER_STYLES
 #define INI_NUM_BLADES NUM_BLADES
 #endif
 
@@ -20,8 +21,8 @@ const unsigned int maxLedsPerStrip = 144;
 #ifdef CONFIG_PRESETS
 Preset presets[] = {
  { "Kestis", "tracks/track1.wav",
-    StylePtr<Blue>(),
-    StylePtr<Green>(),
+    StylePtr<InOutHelper<SimpleClash<Lockup<Blast<Blue,White>,AudioFlicker<Blue,White>>,White>,300,800>>("~ ~ ~ ~ 300"),
+    StylePtr<InOutHelper<SimpleClash<Lockup<Blast<Blue,White>,AudioFlicker<Blue,White>>,White>,300,800>>("~ ~ ~ ~ 300"),
     "INI Config"
  }
   };

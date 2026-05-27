@@ -122,67 +122,67 @@ static void TestArgIndexConstants() {
 }
 
 static void InitPresetForTokenTests(IniPreset* p) {
-  strcpy(p->base_color, "1,2,3");
-  strcpy(p->alt_color, "4,5,6");
-  strcpy(p->blast_color, "7,8,9");
-  strcpy(p->clash_color, "10,11,12");
-  strcpy(p->lockup_color, "13,14,15");
-  strcpy(p->lb_color, "16,17,18");
-  strcpy(p->drag_color, "19,20,21");
-  strcpy(p->stab_color, "22,23,24");
-  strcpy(p->emitter_color, "25,26,27");
-  strcpy(p->swing_color, "28,29,30");
-  strcpy(p->off_color, "31,32,33");
+  strcpy(p->blades[0].base_color, "1,2,3");
+  strcpy(p->blades[0].alt_color, "4,5,6");
+  strcpy(p->blades[0].blast_color, "7,8,9");
+  strcpy(p->blades[0].clash_color, "10,11,12");
+  strcpy(p->blades[0].lockup_color, "13,14,15");
+  strcpy(p->blades[0].lb_color, "16,17,18");
+  strcpy(p->blades[0].drag_color, "19,20,21");
+  strcpy(p->blades[0].stab_color, "22,23,24");
+  strcpy(p->blades[0].emitter_color, "25,26,27");
+  strcpy(p->blades[0].swing_color, "28,29,30");
+  strcpy(p->blades[0].off_color, "31,32,33");
 
-  p->ignition_time = 345;
-  p->retraction_time = 678;
+  p->blades[0].ignition_time = 345;
+  p->blades[0].retraction_time = 678;
   p->off_mode = OFF_MODE_RANDOM;
   p->off_rate_ms = 999;
 
-  p->flicker_depth = 101;
-  p->flicker_speed = 102;
-  p->stripe_width = 103;
-  p->stripe_speed = 104;
-  p->motion_gain = 105;
-  p->noise_mix = 106;
-  p->base_contrast = 107;
-  p->drift_rate = 108;
-  p->warm_shift = 109;
-  p->jitter_amount = 110;
-  p->spark_mix = 111;
-  p->heat_rand = 112;
-  p->fire_cooling = 113;
-  p->rainbow_speed = 114;
+  p->blades[0].flicker_depth = 101;
+  p->blades[0].flicker_speed = 102;
+  p->blades[0].stripe_width = 103;
+  p->blades[0].stripe_speed = 104;
+  p->blades[0].motion_gain = 105;
+  p->blades[0].noise_mix = 106;
+  p->blades[0].base_contrast = 107;
+  p->blades[0].drift_rate = 108;
+  p->blades[0].warm_shift = 109;
+  p->blades[0].jitter_amount = 110;
+  p->blades[0].spark_mix = 111;
+  p->blades[0].heat_rand = 112;
+  p->blades[0].fire_cooling = 113;
+  p->blades[0].rainbow_speed = 114;
 }
 
-static void CheckSharedArgs(const std::vector<std::string>& tokens, const IniPreset& p) {
-  CheckTokenEq(tokens, ini_style_args::kBlastColorArg, p.blast_color);
-  CheckTokenEq(tokens, ini_style_args::kClashColorArg, p.clash_color);
-  CheckTokenEq(tokens, ini_style_args::kLockupColorArg, p.lockup_color);
-  CheckTokenEq(tokens, ini_style_args::kLbColorArg, p.lb_color);
-  CheckTokenEq(tokens, ini_style_args::kDragColorArg, p.drag_color);
-  CheckTokenEq(tokens, ini_style_args::kStabColorArg, p.stab_color);
-  CheckTokenEq(tokens, ini_style_args::kEmitterColorArg, p.emitter_color);
-  CheckTokenEq(tokens, ini_style_args::kIgnitionTimeArg, AsString(p.ignition_time).c_str());
-  CheckTokenEq(tokens, ini_style_args::kRetractionTimeArg, AsString(p.retraction_time).c_str());
-  CheckTokenEq(tokens, ini_style_args::kOffColorArg, p.off_color);
+static void CheckSharedArgs(const std::vector<std::string>& tokens, const IniBladeStyle& b, const IniPreset& p) {
+  CheckTokenEq(tokens, ini_style_args::kBlastColorArg, b.blast_color);
+  CheckTokenEq(tokens, ini_style_args::kClashColorArg, b.clash_color);
+  CheckTokenEq(tokens, ini_style_args::kLockupColorArg, b.lockup_color);
+  CheckTokenEq(tokens, ini_style_args::kLbColorArg, b.lb_color);
+  CheckTokenEq(tokens, ini_style_args::kDragColorArg, b.drag_color);
+  CheckTokenEq(tokens, ini_style_args::kStabColorArg, b.stab_color);
+  CheckTokenEq(tokens, ini_style_args::kEmitterColorArg, b.emitter_color);
+  CheckTokenEq(tokens, ini_style_args::kIgnitionTimeArg, AsString(b.ignition_time).c_str());
+  CheckTokenEq(tokens, ini_style_args::kRetractionTimeArg, AsString(b.retraction_time).c_str());
+  CheckTokenEq(tokens, ini_style_args::kOffColorArg, b.off_color);
   CheckTokenEq(tokens, ini_style_args::kOffModeArg, "2");
   CheckTokenEq(tokens, ini_style_args::kOffRateMsArg, AsString(p.off_rate_ms).c_str());
 
-  CheckTokenEq(tokens, ini_style_args::kFlickerDepthArg, AsString(p.flicker_depth).c_str());
-  CheckTokenEq(tokens, ini_style_args::kFlickerSpeedArg, AsPulseRpmFromMillis(p.flicker_speed).c_str());
-  CheckTokenEq(tokens, ini_style_args::kStripeWidthArg, AsString(p.stripe_width).c_str());
-  CheckTokenEq(tokens, ini_style_args::kStripeSpeedArg, AsString(p.stripe_speed).c_str());
-  CheckTokenEq(tokens, ini_style_args::kMotionGainArg, AsString(p.motion_gain).c_str());
-  CheckTokenEq(tokens, ini_style_args::kNoiseMixArg, AsString(p.noise_mix).c_str());
-  CheckTokenEq(tokens, ini_style_args::kBaseContrastArg, AsString(p.base_contrast).c_str());
-  CheckTokenEq(tokens, ini_style_args::kDriftRateArg, AsString(p.drift_rate).c_str());
-  CheckTokenEq(tokens, ini_style_args::kWarmShiftArg, AsString(p.warm_shift).c_str());
-  CheckTokenEq(tokens, ini_style_args::kJitterAmountArg, AsString(p.jitter_amount).c_str());
-  CheckTokenEq(tokens, ini_style_args::kSparkMixArg, AsString(p.spark_mix).c_str());
-  CheckTokenEq(tokens, ini_style_args::kHeatRandArg, AsString(p.heat_rand).c_str());
-  CheckTokenEq(tokens, ini_style_args::kFireCoolingArg, AsString(p.fire_cooling).c_str());
-  CheckTokenEq(tokens, ini_style_args::kRainbowSpeedArg, AsString(p.rainbow_speed).c_str());
+  CheckTokenEq(tokens, ini_style_args::kFlickerDepthArg, AsString(b.flicker_depth).c_str());
+  CheckTokenEq(tokens, ini_style_args::kFlickerSpeedArg, AsPulseRpmFromMillis(b.flicker_speed).c_str());
+  CheckTokenEq(tokens, ini_style_args::kStripeWidthArg, AsString(b.stripe_width).c_str());
+  CheckTokenEq(tokens, ini_style_args::kStripeSpeedArg, AsString(b.stripe_speed).c_str());
+  CheckTokenEq(tokens, ini_style_args::kMotionGainArg, AsString(b.motion_gain).c_str());
+  CheckTokenEq(tokens, ini_style_args::kNoiseMixArg, AsString(b.noise_mix).c_str());
+  CheckTokenEq(tokens, ini_style_args::kBaseContrastArg, AsString(b.base_contrast).c_str());
+  CheckTokenEq(tokens, ini_style_args::kDriftRateArg, AsString(b.drift_rate).c_str());
+  CheckTokenEq(tokens, ini_style_args::kWarmShiftArg, AsString(b.warm_shift).c_str());
+  CheckTokenEq(tokens, ini_style_args::kJitterAmountArg, AsString(b.jitter_amount).c_str());
+  CheckTokenEq(tokens, ini_style_args::kSparkMixArg, AsString(b.spark_mix).c_str());
+  CheckTokenEq(tokens, ini_style_args::kHeatRandArg, AsString(b.heat_rand).c_str());
+  CheckTokenEq(tokens, ini_style_args::kFireCoolingArg, AsString(b.fire_cooling).c_str());
+  CheckTokenEq(tokens, ini_style_args::kRainbowSpeedArg, AsString(b.rainbow_speed).c_str());
 }
 
 static void TestStandardIncludesAllTuningArgs() {
@@ -190,30 +190,30 @@ static void TestStandardIncludesAllTuningArgs() {
   p.SetDefaults();
   InitPresetForTokenTests(&p);
   char buf[1024];
-  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildStandard(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto tokens = SplitTokens(buf);
 
   CHECK(tokens.size() == static_cast<size_t>(ini_style_args::kArgCount + 1));
   CheckTokenEq(tokens, 0, "ini_standard");
-  CheckSharedArgs(tokens, p);
+  CheckSharedArgs(tokens, p.blades[0], p);
 }
 
 static void TestNumericArgPositionsRemainStable() {
   IniPreset p;
   p.SetDefaults();
   InitPresetForTokenTests(&p);
-  p.strobe_freq = 27;
-  p.strobe_ms = 6;
+  p.blades[0].strobe_freq = 27;
+  p.blades[0].strobe_ms = 6;
 
   char buf[1024];
-  CHECK(BuildStrobe(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildStrobe(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto tokens = SplitTokens(buf);
 
   CHECK(tokens.size() == static_cast<size_t>(ini_style_args::kArgCount + 1));
   CheckTokenEq(tokens, 0, "ini_strobe");
   CheckTokenEq(tokens, ini_style_args::kArg3, "27");
   CheckTokenEq(tokens, ini_style_args::kArg4, "6");
-  CheckSharedArgs(tokens, p);
+  CheckSharedArgs(tokens, p.blades[0], p);
 }
 
 static void TestOffModeRateUnitContract() {
@@ -225,13 +225,13 @@ static void TestOffModeRateUnitContract() {
   char buf[1024];
 
   p.off_mode = OFF_MODE_RANDOM;
-  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildStandard(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto random_tokens = SplitTokens(buf);
   CheckTokenEq(random_tokens, ini_style_args::kOffModeArg, "2");
   CheckTokenEq(random_tokens, ini_style_args::kOffRateMsArg, "1200");
 
   p.off_mode = OFF_MODE_PULSE;
-  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildStandard(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto pulse_tokens = SplitTokens(buf);
   CheckTokenEq(pulse_tokens, ini_style_args::kOffModeArg, "1");
   CheckTokenEq(pulse_tokens, ini_style_args::kOffRateMsArg, "50");
@@ -241,71 +241,71 @@ static void TestOnModeRateUnitContract() {
   IniPreset p;
   p.SetDefaults();
   InitPresetForTokenTests(&p);
-  p.flicker_speed = 1200;
-  p.pulse_rate = 1200;
+  p.blades[0].flicker_speed = 1200;
+  p.blades[0].pulse_rate = 1200;
 
   char buf[1024];
 
-  CHECK(BuildStandard(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildStandard(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto standard_tokens = SplitTokens(buf);
   CheckTokenEq(standard_tokens, ini_style_args::kFlickerSpeedArg, "50");
 
-  CHECK(BuildPulse(&p, buf, sizeof(buf)) > 0);
+  CHECK(BuildPulse(&p.blades[0], &p, buf, sizeof(buf)) > 0);
   const auto pulse_tokens = SplitTokens(buf);
   CheckTokenEq(pulse_tokens, ini_style_args::kArg3, "50");
 }
 
 static void CheckArg1234ByStyleName(const char* style_name,
                                     const std::vector<std::string>& tokens,
-                                    const IniPreset& p) {
-  CheckTokenEq(tokens, ini_style_args::kBaseColorArg, p.base_color);
-  CheckTokenEq(tokens, ini_style_args::kAltColorArg, p.alt_color);
+                                    const IniBladeStyle& b) {
+  CheckTokenEq(tokens, ini_style_args::kBaseColorArg, b.base_color);
+  CheckTokenEq(tokens, ini_style_args::kAltColorArg, b.alt_color);
 
   if (!strcmp(style_name, "strobe")) {
-    CheckTokenEq(tokens, ini_style_args::kArg3, AsString(p.strobe_freq).c_str());
-    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(p.strobe_ms).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg3, AsString(b.strobe_freq).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(b.strobe_ms).c_str());
     return;
   }
   if (!strcmp(style_name, "pulse")) {
-    CheckTokenEq(tokens, ini_style_args::kArg3, AsPulseRpmFromMillis(p.pulse_rate).c_str());
-    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(p.pulse_depth).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg3, AsPulseRpmFromMillis(b.pulse_rate).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(b.pulse_depth).c_str());
     return;
   }
   if (!strcmp(style_name, "lightning")) {
-    CheckTokenEq(tokens, ini_style_args::kArg3, p.clash_color);
-    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(p.strobe_freq).c_str());
+    CheckTokenEq(tokens, ini_style_args::kArg3, b.clash_color);
+    CheckTokenEq(tokens, ini_style_args::kArg4, AsString(b.strobe_freq).c_str());
     return;
   }
   if (!strcmp(style_name, "unstable") || !strcmp(style_name, "kylo")) {
-    CheckTokenEq(tokens, ini_style_args::kArg3, p.blast_color);
-    CheckTokenEq(tokens, ini_style_args::kArg4, p.clash_color);
+    CheckTokenEq(tokens, ini_style_args::kArg3, b.blast_color);
+    CheckTokenEq(tokens, ini_style_args::kArg4, b.clash_color);
     return;
   }
 
-  CheckTokenEq(tokens, ini_style_args::kArg3, p.swing_color);
-  CheckTokenEq(tokens, ini_style_args::kArg4, p.clash_color);
+  CheckTokenEq(tokens, ini_style_args::kArg3, b.swing_color);
+  CheckTokenEq(tokens, ini_style_args::kArg4, b.clash_color);
 }
 
 static void TestEveryMainStyleBuildContract() {
   IniPreset p;
   p.SetDefaults();
   InitPresetForTokenTests(&p);
-  p.strobe_freq = 29;
-  p.strobe_ms = 7;
-  p.pulse_rate = 1333;
-  p.pulse_depth = 22222;
+  p.blades[0].strobe_freq = 29;
+  p.blades[0].strobe_ms = 7;
+  p.blades[0].pulse_rate = 1333;
+  p.blades[0].pulse_depth = 22222;
 
   for (int i = 0; i < INI_STYLE_COUNT; i++) {
     const IniStyleEntry& entry = ini_style_registry[i];
     char buf[1024];
-    CHECK(entry.build(&p, buf, sizeof(buf)) > 0);
+    CHECK(entry.build(&p.blades[0], &p, buf, sizeof(buf)) > 0);
     const auto tokens = SplitTokens(buf);
     CHECK(tokens.size() == static_cast<size_t>(ini_style_args::kArgCount + 1));
 
     const std::string expected_parser = std::string("ini_") + entry.name;
     CheckTokenEq(tokens, 0, expected_parser.c_str());
-    CheckArg1234ByStyleName(entry.name, tokens, p);
-    CheckSharedArgs(tokens, p);
+    CheckArg1234ByStyleName(entry.name, tokens, p.blades[0]);
+    CheckSharedArgs(tokens, p.blades[0], p);
   }
 }
 
@@ -314,9 +314,9 @@ static void TestBaseContrastAliasAndClamps() {
   p.SetDefaults();
 
   IniLoader::ParsePreset("core_contrast", "12345", &p);
-  CHECK(p.base_contrast == 12345);
+  CHECK(p.blades[0].base_contrast == 12345);
   IniLoader::ParsePreset("base_contrast", "23456", &p);
-  CHECK(p.base_contrast == 23456);
+  CHECK(p.blades[0].base_contrast == 23456);
 
   IniLoader::ParsePreset("flicker_depth", "999999", &p);
   IniLoader::ParsePreset("flicker_speed", "-1", &p);
@@ -338,24 +338,24 @@ static void TestBaseContrastAliasAndClamps() {
   IniLoader::ParsePreset("rainbow_speed", "-1", &p);
   IniLoader::ParsePreset("off_rate_ms", "999999", &p);
 
-  CHECK(p.flicker_depth == 32768);
-  CHECK(p.flicker_speed == 1);
-  CHECK(p.stripe_width == 1);
-  CHECK(p.stripe_speed == 20000);
-  CHECK(p.motion_gain == 32768);
-  CHECK(p.noise_mix == 0);
-  CHECK(p.base_contrast == 32768);
-  CHECK(p.pulse_rate == 1);
-  CHECK(p.pulse_depth == 32768);
-  CHECK(p.strobe_freq == 200);
-  CHECK(p.strobe_ms == 1);
-  CHECK(p.drift_rate == 32768);
-  CHECK(p.warm_shift == 32768);
-  CHECK(p.jitter_amount == 1);
-  CHECK(p.spark_mix == 32768);
-  CHECK(p.heat_rand == 0);
-  CHECK(p.fire_cooling == 255);
-  CHECK(p.rainbow_speed == 1);
+  CHECK(p.blades[0].flicker_depth == 32768);
+  CHECK(p.blades[0].flicker_speed == 1);
+  CHECK(p.blades[0].stripe_width == 1);
+  CHECK(p.blades[0].stripe_speed == 20000);
+  CHECK(p.blades[0].motion_gain == 32768);
+  CHECK(p.blades[0].noise_mix == 0);
+  CHECK(p.blades[0].base_contrast == 32768);
+  CHECK(p.blades[0].pulse_rate == 1);
+  CHECK(p.blades[0].pulse_depth == 32768);
+  CHECK(p.blades[0].strobe_freq == 200);
+  CHECK(p.blades[0].strobe_ms == 1);
+  CHECK(p.blades[0].drift_rate == 32768);
+  CHECK(p.blades[0].warm_shift == 32768);
+  CHECK(p.blades[0].jitter_amount == 1);
+  CHECK(p.blades[0].spark_mix == 32768);
+  CHECK(p.blades[0].heat_rand == 0);
+  CHECK(p.blades[0].fire_cooling == 255);
+  CHECK(p.blades[0].rainbow_speed == 1);
   CHECK(p.off_rate_ms == 60000);
 }
 
@@ -482,14 +482,14 @@ static void TestStyleStringTruncationGuard() {
   p.off_rate_ms = 54321;
 
   char full[1024];
-  const int full_len = BuildStandard(&p, full, sizeof(full));
+  const int full_len = BuildStandard(&p.blades[0], &p, full, sizeof(full));
   CHECK(full_len > 0);
 
   std::vector<char> exact_fit(static_cast<size_t>(full_len));
-  CHECK(BuildStandard(&p, exact_fit.data(), static_cast<int>(exact_fit.size())) < 0);
+  CHECK(BuildStandard(&p.blades[0], &p, exact_fit.data(), static_cast<int>(exact_fit.size())) < 0);
 
   std::vector<char> plus_null(static_cast<size_t>(full_len + 1));
-  CHECK(BuildStandard(&p, plus_null.data(), static_cast<int>(plus_null.size())) == full_len);
+  CHECK(BuildStandard(&p.blades[0], &p, plus_null.data(), static_cast<int>(plus_null.size())) == full_len);
 }
 
 static void TestBankCommandNamesStable() {
@@ -505,6 +505,14 @@ static void TestHardwareProfileLineContract() {
 
   BuildHardwareProfileLine(3, 1, false, false, line, sizeof(line));
   CHECK(strcmp(line, "HW_PROFILE num_blades=3 num_buttons=1 has_blade_detect=0 blade_detect=0") == 0);
+}
+
+static void TestHardwareProfileCountFallback() {
+  CHECK(ResolveHardwareProfileCount(0, 2) == 2);
+  CHECK(ResolveHardwareProfileCount(-1, 3) == 3);
+  CHECK(ResolveHardwareProfileCount(4, 2) == 4);
+  CHECK(ResolveHardwareBladeCountForProfile() == INI_NUM_BLADES);
+  CHECK(ResolveHardwareButtonCountForProfile() == ResolveRuntimeDefaultButtonCount());
 }
 
 static void TestIniBankArgNormalizationValidValues() {
@@ -602,7 +610,7 @@ static void TestNBladeRuntimeDefaults() {
   CHECK(cfg.num_blades == INI_NUM_BLADES);
   CHECK(cfg.presets[0].blade_count == INI_NUM_BLADES);
   CHECK(cfg.global.num_buttons == ClampRuntimeButtonCount(INI_DEFAULT_NUM_BUTTONS));
-  CHECK(strcmp(cfg.presets[0].blades[0].style_name, "standard") == 0);
+  CHECK(strcmp(cfg.presets[0].blades[0].style_name, "audio_flicker") == 0);
 }
 
 static void TestBuildSaveDirPathForPresetsFile() {
@@ -716,6 +724,10 @@ static void TestIniLoadRetryPolicyAllowsRecoveryAttempts() {
   CHECK(!ShouldAttemptIniLoad(true, false, false, 6000, 0));
   CHECK(!ShouldAttemptIniLoad(false, false, true, 7000, kIniLoadRetryDisabled));
   CHECK(ShouldAttemptIniLoad(true, false, true, 7000, kIniLoadRetryDisabled));
+  CHECK(ResolveNextIniLoadAttemptOnMissing(5000) == 5000 + kIniLoadRetryMs);
+  CHECK(ResolveNextIniLoadAttemptOnMissing(5000) != kIniLoadRetryDisabled);
+  CHECK(!ShouldAttemptIniLoad(false, false, true, 5500, ResolveNextIniLoadAttemptOnMissing(5000)));
+  CHECK(ShouldAttemptIniLoad(false, false, true, 6000, ResolveNextIniLoadAttemptOnMissing(5000)));
 }
 
 static void TestBladeOutAllocationPolicy() {
@@ -735,7 +747,6 @@ static void TestStandardEmitsV2ParserToken() {
   InitPresetForTokenTests(&p);
   p.blade_count = 1;
   strcpy(p.blades[0].style_name, "standard");
-  CopyBladeToLegacyView(p.blades[0], &p);
 
   char buf[1024];
   CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
@@ -750,13 +761,34 @@ static void TestAudioFlickerEmitsV2ParserToken() {
   InitPresetForTokenTests(&p);
   p.blade_count = 1;
   strcpy(p.blades[0].style_name, "audioflicker");
-  CopyBladeToLegacyView(p.blades[0], &p);
 
   char buf[1024];
   CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
   const auto tokens = SplitTokens(buf);
   CHECK(tokens.size() > 0);
-  CheckTokenEq(tokens, 0, "ini2_audioflicker");
+  CheckTokenEq(tokens, 0, "ini2_audio_flicker");
+}
+
+static void TestHumpFlickerSchemaContract() {
+  const GeneratedStyleDef* generated = FindGeneratedStyleDef("hump_flicker");
+  CHECK(generated != nullptr);
+  CHECK(strcmp(generated->parser_name, "ini2_hump_flicker") == 0);
+}
+
+static void TestHumpFlickerNamedParamMapsStyleOptionArg() {
+  IniPreset p;
+  p.SetDefaults();
+  InitPresetForTokenTests(&p);
+  p.blade_count = 1;
+  strcpy(p.blades[0].style_name, "hump_flicker");
+  CHECK(p.blades[0].SetNamedStyleParam("hump_amount", "77"));
+
+  char buf[1024];
+  CHECK(BuildIniStyleForBlade(&p, 0, buf, sizeof(buf)) > 0);
+  const auto tokens = SplitTokens(buf);
+  CHECK(tokens.size() > static_cast<size_t>(ini_style_args::kStyleOptionArg));
+  CheckTokenEq(tokens, 0, "ini2_hump_flicker");
+  CheckTokenEq(tokens, ini_style_args::kStyleOptionArg, "77");
 }
 
 int main() {
@@ -777,6 +809,7 @@ int main() {
   TestStyleStringTruncationGuard();
   TestBankCommandNamesStable();
   TestHardwareProfileLineContract();
+  TestHardwareProfileCountFallback();
   TestIniBankArgNormalizationValidValues();
   TestIniBankArgNormalizationRejectsInvalidValues();
   TestIniStreamingControlCommandIdentification();
@@ -796,5 +829,7 @@ int main() {
   TestGeneratedStandardStyleSchemaContract();
   TestStandardEmitsV2ParserToken();
   TestAudioFlickerEmitsV2ParserToken();
+  TestHumpFlickerSchemaContract();
+  TestHumpFlickerNamedParamMapsStyleOptionArg();
   return 0;
 }
