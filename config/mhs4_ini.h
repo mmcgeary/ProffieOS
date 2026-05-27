@@ -1,5 +1,5 @@
 #ifdef CONFIG_TOP
-#include "proffieboard_v3_config.h"
+#include "proffieboard_config.h"
 #define NUM_BLADES 1
 #define NUM_BUTTONS 1
 #define VOLUME 100
@@ -34,6 +34,8 @@ Preset presets[] = {
   { "Style8", "tracks/track1.wav", StylePtr<IniLavaCoreBlade>() },
   { "Style9", "tracks/track1.wav", StylePtr<IniSparkleCoreBlade>() },
   { "Style10", "tracks/track1.wav", StylePtr<IniFireCoreBlade>() },
+  { "Style11", "tracks/track1.wav", StylePtr<IniBlinkingCoreBlade>() },
+  { "Style12", "tracks/track1.wav", StylePtr<IniColorCycleCoreBlade>() },
 };
 
 BladeConfig blades[] = {

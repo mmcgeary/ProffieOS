@@ -4,6 +4,7 @@
 
 #include "runtime_config.h"
 #include "../common/file_reader.h"
+#include "blade_bank_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,7 @@ public:
       return false;
     }
 
-    char style_buf[MAX_STYLE_STRING_LEN];
+    char style_buf[64];
     f.print("installed=");
     f.print(install_time);
     f.print("\n");

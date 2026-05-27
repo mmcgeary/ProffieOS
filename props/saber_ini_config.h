@@ -117,6 +117,7 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 #include "button_profiles.h"
 #include "action_dispatch.h"
 #include "blade_bank_utils.h"
+#include "../styles/ini_style_arg_ids.h"
 
 #define INI_CONFIG_FILE "saber_config.ini"
 #define INI_BLADE_OUT_FILE "blade_out.ini"
@@ -125,6 +126,102 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 #define INI_ALERT_MISSING "ini_missing.wav"
 #define INI_ALERT_ERROR "ini_error.wav"
 #define INI_ALERT_LOADED "ini_loaded.wav"
+
+// Builds a style string of the form:
+//   "<base_style_str> <arg1> <arg2> ... <argN>"
+// where each positional slot corresponds to the arg ID used by RgbArg/IntArg.
+// Slots whose value is unknown/default are emitted as "~" (ArgParser skips ~).
+//
+// The ArgParser is 1-indexed; we emit args in slot order 1..kExtendedArgCount.
+// Color args emit "R,G,B" (8-bit); int args emit decimal integer.
+static void BuildArgStyleString(const char* base_style,
+                                const IniBladeStyle* blade,
+                                char* out, size_t out_size) {
+  using namespace ini_style_args;
+  // Map from arg-slot index (1-based) -> string to emit.
+  // We build it slot by slot; unknown slots get "~".
+  const int kMaxSlot = kExtendedArgCount;
+
+  // Helper lambda-equivalent: resolve a color field into "r,g,b" or null.
+  auto color_arg = [](const char* field, char* buf, int bufsz) -> bool {
+    uint16_t r16, g16, b16;
+    if (!field || !field[0]) return false;
+    if (!ResolveColor(field, &r16, &g16, &b16)) return false;
+    // RgbArg reads 8-bit values (strtol 0-255 from the style string).
+    snprintf(buf, bufsz, "%u,%u,%u",
+             (unsigned)(r16 >> 8),
+             (unsigned)(g16 >> 8),
+             (unsigned)(b16 >> 8));
+    return true;
+  };
+
+  // Start with the base style string.
+  size_t pos = strlcpy(out, base_style, out_size);
+
+  char slot_buf[24];
+
+  for (int slot = 1; slot <= kMaxSlot && pos < out_size - 2; slot++) {
+    const char* val = nullptr;
+    bool is_color = false;
+
+    switch (slot) {
+      case kBaseColorArg:       val = blade->base_color;      is_color = true; break;
+      case kAltColorArg:        val = blade->alt_color;       is_color = true; break;
+      case kStyleOptionArg:     /* no ini field — emit ~ */   break;
+      case kIgnitionOptionArg:  /* no ini field — emit ~ */   break;
+      case kBlastColorArg:      val = blade->blast_color;     is_color = true; break;
+      case kClashColorArg:      val = blade->clash_color;     is_color = true; break;
+      case kLockupColorArg:     val = blade->lockup_color;    is_color = true; break;
+      case kLbColorArg:         val = blade->lb_color;        is_color = true; break;
+      case kDragColorArg:       val = blade->drag_color;      is_color = true; break;
+      case kStabColorArg:       val = blade->stab_color;      is_color = true; break;
+      case kEmitterColorArg:    val = blade->emitter_color;   is_color = true; break;
+      case kIgnitionTimeArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->ignition_time);   val = slot_buf; break;
+      case kRetractionTimeArg:  snprintf(slot_buf, sizeof(slot_buf), "%u", blade->retraction_time); val = slot_buf; break;
+      case kOffColorArg:        val = blade->off_color;       is_color = true; break;
+      case kOffModeArg:         /* handled separately */      break;
+      case kOffRateMsArg:       /* handled separately */      break;
+      case kFlickerDepthArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->flicker_depth);   val = slot_buf; break;
+      case kFlickerSpeedArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->flicker_speed);   val = slot_buf; break;
+      case kStripeWidthArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->stripe_width);    val = slot_buf; break;
+      case kStripeSpeedArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->stripe_speed);    val = slot_buf; break;
+      case kMotionGainArg:      snprintf(slot_buf, sizeof(slot_buf), "%u", blade->motion_gain);     val = slot_buf; break;
+      case kNoiseMixArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->noise_mix);       val = slot_buf; break;
+      case kBaseContrastArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->base_contrast);   val = slot_buf; break;
+      case kDriftRateArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->drift_rate);      val = slot_buf; break;
+      case kWarmShiftArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->warm_shift);      val = slot_buf; break;
+      case kJitterAmountArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->jitter_amount);   val = slot_buf; break;
+      case kSparkMixArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->spark_mix);       val = slot_buf; break;
+      case kHeatRandArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->heat_rand);       val = slot_buf; break;
+      case kFireCoolingArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->fire_cooling);    val = slot_buf; break;
+      case kRainbowSpeedArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->rainbow_speed);   val = slot_buf; break;
+      case kAltColor2Arg:       /* ALT_COLOR2 — no direct field */ break;
+      case kAltColor3Arg:       /* ALT_COLOR3 — no direct field */ break;
+      default:                  break;
+    }
+
+    // If a color field, resolve it to slot_buf.
+    if (is_color && val && val[0]) {
+      if (!color_arg(val, slot_buf, sizeof(slot_buf))) {
+        val = nullptr; // failed resolution — fall through to ~
+      } else {
+        val = slot_buf;
+      }
+    }
+
+    out[pos++] = ' ';
+    if (val && val[0]) {
+      size_t len = strlen(val);
+      if (pos + len < out_size - 1) {
+        memcpy(out + pos, val, len);
+        pos += len;
+      }
+    } else {
+      out[pos++] = '~';
+    }
+  }
+  out[pos] = '\0';
+}
 
 class SaberIniConfig : public PropBase {
 public:
@@ -188,21 +285,30 @@ public:
     uint8_t style_blade_count = ResolveStyleBladeCount(config_, p);
     for (int blade = 0; blade < NUM_BLADES; blade++) {
       uint8_t src = (blade < style_blade_count) ? blade : (style_blade_count - 1);
-      const char* style_str = p->blades[src].style_name;
+      const IniBladeStyle* blade_style = &p->blades[src];
+      const char* style_str = blade_style->style_name;
+
+      // Determine the base "builtin X Y" string.
+      char base_buf[32];
       if (!style_str[0]) {
         current_preset_.current_style_[blade] = mkstr("static 0,0,0");
+        continue;
       } else if (strncmp(style_str, "builtin", 7) == 0) {
-        current_preset_.current_style_[blade] = mkstr(style_str);
+        strlcpy(base_buf, style_str, sizeof(base_buf));
       } else {
-        int idx = atoi(style_str);
-        if (idx >= 0 && style_str[0] >= '0' && style_str[0] <= '9') {
-           char buf[32];
-           snprintf(buf, sizeof(buf), "builtin %d %d", idx, blade + 1);
-           current_preset_.current_style_[blade] = mkstr(buf);
+        int sidx = atoi(style_str);
+        if (sidx >= 0 && style_str[0] >= '0' && style_str[0] <= '9') {
+          snprintf(base_buf, sizeof(base_buf), "builtin %d %d", sidx, blade + 1);
         } else {
-           current_preset_.current_style_[blade] = mkstr(style_str);
+          strlcpy(base_buf, style_str, sizeof(base_buf));
         }
       }
+
+      // Append all dynamic args so RgbArg/IntArg constructors pick them up.
+      // Buffer: base + space + up to kExtendedArgCount args, each up to ~12 chars.
+      static char arg_buf[32 + ini_style_args::kExtendedArgCount * 13];
+      BuildArgStyleString(base_buf, blade_style, arg_buf, sizeof(arg_buf));
+      current_preset_.current_style_[blade] = mkstr(arg_buf);
     }
 
     AllocateBladeStyles();

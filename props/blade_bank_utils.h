@@ -10,6 +10,17 @@ inline bool ShouldUseBladeOutConfig(bool blade_detected, bool blade_out_exists) 
   return !blade_detected && blade_out_exists;
 }
 
+#include <algorithm>
+
+inline uint8_t ResolveStyleBladeCount(const RuntimeConfig* config, const IniPreset* p) {
+  uint8_t max_blades = 1;
+#ifdef INI_NUM_BLADES
+  max_blades = INI_NUM_BLADES;
+#endif
+  if (p && p->blade_count > 0) return std::min((uint8_t)p->blade_count, max_blades);
+  return std::min((uint8_t)1, max_blades);
+}
+
 inline void CopyGlobalAndActions(const RuntimeConfig& src, RuntimeConfig* dst) {
   dst->global = src.global;
   memcpy(dst->action_map_on, src.action_map_on, sizeof(src.action_map_on));

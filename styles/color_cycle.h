@@ -111,4 +111,45 @@ public:
   }
 };
 
+template<class OFF_COLOR, class OFF_PERCENTAGE, class OFF_RPM,
+         class ON_COLOR = OFF_COLOR,
+         class ON_PERCENTAGE = OFF_PERCENTAGE,
+         class ON_RPM = OFF_RPM,
+         class FADE_TIME_MILLIS = Int<1>,
+         class BASE_COLOR = Rgb<0,0,0> >
+class ColorCycleX : public ColorCycleBase {
+public:
+  bool run(BladeBase* base) {
+    off_c_.run(base);
+    on_c_.run(base);
+    base_c_.run(base);
+    off_percentage_.run(base);
+    off_rpm_.run(base);
+    on_percentage_.run(base);
+    on_rpm_.run(base);
+    fade_time_millis_.run(base);
+    return ColorCycleBase::run(base, off_percentage_.getInteger(0), off_rpm_.getInteger(0), on_percentage_.getInteger(0), on_rpm_.getInteger(0), fade_time_millis_.getInteger(0),
+                               is_same_type<BASE_COLOR, Rgb<0,0,0> >::value);
+  }
+
+private:
+  OFF_COLOR off_c_;
+  ON_COLOR on_c_;
+  BASE_COLOR base_c_;
+  OFF_PERCENTAGE off_percentage_;
+  OFF_RPM off_rpm_;
+  ON_PERCENTAGE on_percentage_;
+  ON_RPM on_rpm_;
+  FADE_TIME_MILLIS fade_time_millis_;
+public:
+
+  auto getColor(int led) -> decltype(MixColors(base_c_.getColor(0), MixColors(off_c_.getColor(0), on_c_.getColor(0), 1, 15), 1, 15)) {
+    int black_mix = getMix(led);
+    auto off_c = off_c_.getColor(led);
+    auto on_c = on_c_.getColor(led);
+    auto base_c = base_c_.getColor(led);
+    return MixColors(base_c, MixColors(off_c, on_c, fade_int_, 14), black_mix, 14);
+  }
+};
+
 #endif

@@ -376,10 +376,13 @@ struct SimpleColor {
   bool getOverdrive() const { return false; }
 };
 
+struct RGBA_nod;
+
 struct OverDriveColor {
   OverDriveColor() {}
   OverDriveColor(const Color16 &c_, bool o) : c(c_), overdrive(o) {}
   OverDriveColor(const SimpleColor &c_) : c(c_.c), overdrive(false) {}
+  OverDriveColor(const RGBA_nod &rgba);
   Color16 c;
   bool overdrive;
   
@@ -475,6 +478,8 @@ struct RGBA_nod {
   }
   bool getOverdrive() const { return false; }
 };
+
+inline OverDriveColor::OverDriveColor(const RGBA_nod &rgba) : c(rgba.c * rgba.alpha >> 15), overdrive(false) {}
 
 // Premultiplied ALPHA
 struct RGBA {

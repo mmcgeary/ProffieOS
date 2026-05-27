@@ -62,8 +62,15 @@ enum ArgId : int {
   kLockupSizeArg = 56,
   kMeltBaseArg = 57,
   kMeltAltArg = 58,
+  kPulseSpeedArg = 59,
+  kHumpWidthArg = 60,
+  kCycleOffRpmArg = 61,
+  kCycleOnRpmArg = 62,
+  kCycleOffPctArg = 63,
+  kCycleOnPctArg = 64,
+  kCycleFadeArg = 65,
   kArgCount = kRainbowSpeedArg,
-  kExtendedArgCount = kMeltAltArg,
+  kExtendedArgCount = kCycleFadeArg,
 };
 
 // Legacy aliases kept for compatibility with existing template code.
@@ -115,5 +122,26 @@ static constexpr int kTuningArgCount = kRainbowSpeedArg - kFlickerDepthArg + 1;
 #define LOCKUP_SIZE_ARG ini_style_args::kLockupSizeArg
 #define MELT_BASE_ARG ini_style_args::kMeltBaseArg
 #define MELT_ALT_ARG ini_style_args::kMeltAltArg
+#define FLICKER_DEPTH_ARG ini_style_args::kFlickerDepthArg
+#define FLICKER_SPEED_ARG ini_style_args::kFlickerSpeedArg
+#define STRIPE_WIDTH_ARG ini_style_args::kStripeWidthArg
+#define STRIPE_SPEED_ARG ini_style_args::kStripeSpeedArg
+#define MOTION_GAIN_ARG ini_style_args::kMotionGainArg
+#define NOISE_MIX_ARG ini_style_args::kNoiseMixArg
+#define BASE_CONTRAST_ARG ini_style_args::kBaseContrastArg
+#define DRIFT_RATE_ARG ini_style_args::kDriftRateArg
+#define WARM_SHIFT_ARG ini_style_args::kWarmShiftArg
+#define JITTER_AMOUNT_ARG ini_style_args::kJitterAmountArg
+#define SPARK_MIX_ARG ini_style_args::kSparkMixArg
+#define HEAT_RAND_ARG ini_style_args::kHeatRandArg
+#define FIRE_COOLING_ARG ini_style_args::kFireCoolingArg
+#define RAINBOW_SPEED_ARG ini_style_args::kRainbowSpeedArg
+#define PULSE_SPEED_ARG ini_style_args::kPulseSpeedArg
+#define HUMP_WIDTH_ARG ini_style_args::kHumpWidthArg
+#define CYCLE_OFF_RPM_ARG ini_style_args::kCycleOffRpmArg
+#define CYCLE_ON_RPM_ARG ini_style_args::kCycleOnRpmArg
+#define CYCLE_OFF_PCT_ARG ini_style_args::kCycleOffPctArg
+#define CYCLE_ON_PCT_ARG ini_style_args::kCycleOnPctArg
+#define CYCLE_FADE_ARG ini_style_args::kCycleFadeArg
 
 #endif  // STYLES_INI_STYLE_ARG_IDS_H
