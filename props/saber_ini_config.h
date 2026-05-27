@@ -292,7 +292,7 @@ public:
       }
       DetectTwist();
     }
-    if (!ini_loaded_ && millis() > 10000) LoadIniConfig(); // DIAG: 10s delay
+    if (!ini_loaded_) LoadIniConfig();
   }
 
   void Off(OffType off_type = OFF_NORMAL, EffectLocation location = EffectLocation()) override {
