@@ -36,12 +36,11 @@ public:
           in_global = true;
         } else if (strncasecmp(parser.Section(), "preset", 6) == 0) {
           int num = atoi(parser.Section() + 6);
-          if (num >= 1 && num <= INI_MAX_PRESETS) {
+          if (num >= 1) {
             current_preset_idx = num - 1;
             if (current_preset_idx >= config->num_presets) {
               config->num_presets = current_preset_idx + 1;
             }
-            config->presets[current_preset_idx].SetDefaults();
           }
         } else if (strcasecmp(parser.Section(), "buttons_on") == 0) {
           in_buttons_on = true;
@@ -62,15 +61,55 @@ public:
         ParseButtonSlot(key, val, config->action_map_on);
       } else if (in_buttons_off) {
         ParseButtonSlot(key, val, config->action_map_off);
-      } else if (current_preset_idx >= 0) {
-        ParsePreset(key, val, &config->presets[current_preset_idx]);
       }
+      // Intentionally skipping presets in the main Load() to save RAM.
+      // Presets are loaded on-demand via LoadPreset().
     }
 
     parser.Close();
     FinalizeButtonMappings(config);
     config->loaded = true;
     return true;
+  }
+
+  static bool LoadPreset(const char* filename, int target_idx, IniPreset* out_preset) {
+    IniParser parser;
+    if (!parser.Open(filename)) {
+      return false;
+    }
+
+    out_preset->SetDefaults();
+    
+    char target_section[32];
+    snprintf(target_section, sizeof(target_section), "preset%d", target_idx + 1);
+
+    bool in_target_preset = false;
+    bool found_preset = false;
+
+    while (true) {
+      IniParseResult r = parser.Next();
+      if (r == INI_EOF) break;
+
+      if (r == INI_SECTION) {
+        if (strcasecmp(parser.Section(), target_section) == 0) {
+          in_target_preset = true;
+          found_preset = true;
+        } else {
+          // If we were in the target preset and hit a new section, we are done.
+          if (in_target_preset) break;
+        }
+        continue;
+      }
+
+      if (r != INI_KEY_VALUE) continue;
+
+      if (in_target_preset) {
+        ParsePreset(parser.Key(), parser.Value(), out_preset);
+      }
+    }
+
+    parser.Close();
+    return found_preset;
   }
 
 private:

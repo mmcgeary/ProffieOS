@@ -8,13 +8,6 @@
 #define INI_MAX_KEY_LEN 32
 #endif
 
-#ifndef INI_MAX_PRESETS
-#if PROFFIEBOARD_VERSION - 0 == 2
-#define INI_MAX_PRESETS 5
-#else
-#define INI_MAX_PRESETS 20
-#endif
-#endif
 
 #define INI_MAX_SLOTS 34
 #define INI_MAX_STYLE_NAME_LEN 24
@@ -349,7 +342,8 @@ struct IniGlobalConfig {
 struct RuntimeConfig {
   IniGlobalConfig global;
   uint8_t num_blades;
-  IniPreset presets[INI_MAX_PRESETS];
+  IniPreset active_preset;
+  int active_preset_index = -1;
   int num_presets;
 
   IniAction action_map_on[INI_MAX_SLOTS];
@@ -361,8 +355,9 @@ struct RuntimeConfig {
     global.SetDefaults();
     num_blades = ResolveRuntimeDefaultBladeCount();
     num_presets = 1;
-    presets[0].SetDefaults();
-    presets[0].SetBladeCountFromRuntime(num_blades);
+    active_preset_index = -1;
+    active_preset.SetDefaults();
+    active_preset.SetBladeCountFromRuntime(num_blades);
     loaded = false;
 
     memset(action_map_on, 0, sizeof(action_map_on));

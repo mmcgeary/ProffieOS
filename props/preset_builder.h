@@ -53,20 +53,25 @@ public:
     for (int i = 0; i < config->num_presets; i++) {
       STDOUT.print("PB: preset=");
       STDOUT.println(i);
-      const IniPreset* p = &config->presets[i];
+      
+      IniPreset p;
+      if (!IniLoader::LoadPreset(INI_CONFIG_FILE, i, &p)) {
+        STDOUT.println("PB: LoadPreset failed");
+        continue;
+      }
 
       f.print("new_preset\n");
       f.print("font=");
-      f.print(p->font);
+      f.print(p.font);
       f.print("\n");
 
       f.print("track=");
-      f.print(p->track[0] ? p->track : "");
+      f.print(p.track[0] ? p.track : "");
       f.print("\n");
 
-      uint8_t style_blade_count = ResolveStyleBladeCount(config, p);
+      uint8_t style_blade_count = ResolveStyleBladeCount(config, &p);
       for (uint8_t blade_idx = 0; blade_idx < style_blade_count; blade_idx++) {
-        int len = BuildBladeStyle(p, blade_idx, style_buf, sizeof(style_buf));
+        int len = BuildBladeStyle(&p, blade_idx, style_buf, sizeof(style_buf));
         if (len > 0) {
           f.print("style=");
           f.print(style_buf);
@@ -77,7 +82,7 @@ public:
       }
 
       f.print("name=");
-      f.print(p->name);
+      f.print(p.name);
       f.print("\n");
 
       f.print("variation=0\n");

@@ -113,12 +113,6 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 #include "runtime_config.h"
 #include "ini_loader.h"
 
-#include "preset_builder.h"
-#include "button_profiles.h"
-#include "action_dispatch.h"
-#include "blade_bank_utils.h"
-#include "../styles/ini_style_arg_ids.h"
-
 #define INI_CONFIG_FILE "saber_config.ini"
 #define INI_BLADE_OUT_FILE "blade_out.ini"
 #define INI_BUILT_PRESETS_FILE "presets.ini"
@@ -126,6 +120,12 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 #define INI_ALERT_MISSING "ini_missing.wav"
 #define INI_ALERT_ERROR "ini_error.wav"
 #define INI_ALERT_LOADED "ini_loaded.wav"
+
+#include "preset_builder.h"
+#include "button_profiles.h"
+#include "action_dispatch.h"
+#include "blade_bank_utils.h"
+#include "../styles/ini_style_arg_ids.h"
 
 // Builds a style string of the form:
 //   "<base_style_str> <arg1> <arg2> ... <argN>"
@@ -274,7 +274,16 @@ public:
     FreeBladeStyles();
 
     int idx = ((preset_num % config_->num_presets) + config_->num_presets) % config_->num_presets;
-    const IniPreset* p = &config_->presets[idx];
+    
+    if (config_->active_preset_index != idx) {
+      if (IniLoader::LoadPreset(INI_CONFIG_FILE, idx, &config_->active_preset)) {
+        config_->active_preset_index = idx;
+      } else {
+        STDOUT.print("SaberIni: Failed to stream preset ");
+        STDOUT.println(idx + 1);
+      }
+    }
+    const IniPreset* p = &config_->active_preset;
 
     current_preset_.preset_num = idx;
     current_preset_.font = p->font;
