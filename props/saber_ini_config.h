@@ -583,7 +583,7 @@ private:
       LOCK_SD(false);
       if (++ini_retries_ >= 3) {
         STDOUT.println("SaberIni: INI missing (giving up)");
-        ini_loaded_ = true; // Act as if loaded so we stop trying
+        ini_loaded_ = false; // Must remain false to trigger PropBase::SetPreset fallback
         next_ini_load_attempt_ms_ = kIniLoadRetryDisabled;
       } else {
         STDOUT.println("SaberIni: INI missing (retrying)");
