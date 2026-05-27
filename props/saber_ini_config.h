@@ -496,6 +496,7 @@ private:
   int active_lockup_slot_;
   bool streaming_mode_ = false;
   uint32_t next_ini_load_attempt_ms_ = 0;
+  uint8_t ini_retries_ = 0;
   LSFS::LSFILE stream_file_;
   const char* stream_target_file_ = nullptr;
 
@@ -580,9 +581,15 @@ private:
     STDOUT.println("SaberIni: LSFS::Exists");
     if (!LSFS::Exists(INI_CONFIG_FILE)) {
       LOCK_SD(false);
-      STDOUT.println("SaberIni: INI missing (retrying)");
-      ini_loaded_ = false;
-      next_ini_load_attempt_ms_ = ResolveNextIniLoadAttemptOnMissing(now);
+      if (++ini_retries_ >= 3) {
+        STDOUT.println("SaberIni: INI missing (giving up)");
+        ini_loaded_ = true; // Act as if loaded so we stop trying
+        next_ini_load_attempt_ms_ = kIniLoadRetryDisabled;
+      } else {
+        STDOUT.println("SaberIni: INI missing (retrying)");
+        ini_loaded_ = false;
+        next_ini_load_attempt_ms_ = ResolveNextIniLoadAttemptOnMissing(now);
+      }
       return;
     }
 
