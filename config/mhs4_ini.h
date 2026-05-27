@@ -1,5 +1,5 @@
 #ifdef CONFIG_TOP
-#include "proffieboard_config.h"
+#include "proffieboard_v3_config.h"
 #define NUM_BLADES 1
 #define NUM_BUTTONS 1
 #define VOLUME 100
@@ -20,23 +20,27 @@ const unsigned int maxLedsPerStrip = 144;
 #endif
 
 #ifdef CONFIG_PRESETS
-Preset blade[] = {
- { "Kestis", "tracks/track1.wav",
-    StylePtr<Blue>(),
-    "INI Config"
- }
-  };
-Preset noblade[] = {
-   { "Calibrate", "tracks/Force_Theme.wav",
-    StylePtr<Blue>(),
-    "INI Config"}
-    };
+#include "../styles/ini_custom_styles.h"
+
+Preset presets[] = {
+  { "Style0", "tracks/track1.wav", StylePtr<IniAudioFlickerCoreBlade>() },
+  { "Style1", "tracks/track1.wav", StylePtr<IniHumpFlickerCoreBlade>() },
+  { "Style2", "tracks/track1.wav", StylePtr<IniPulsingStripesCoreBlade>() },
+  { "Style3", "tracks/track1.wav", StylePtr<IniEnergyCoreBlade>() },
+  { "Style4", "tracks/track1.wav", StylePtr<IniFireUnstableCoreBlade>() },
+  { "Style5", "tracks/track1.wav", StylePtr<IniPlasmaCoreBlade>() },
+  { "Style6", "tracks/track1.wav", StylePtr<IniRainbowCoreBlade>() },
+  { "Style7", "tracks/track1.wav", StylePtr<IniEnergyBladeCoreBlade>() },
+  { "Style8", "tracks/track1.wav", StylePtr<IniLavaCoreBlade>() },
+  { "Style9", "tracks/track1.wav", StylePtr<IniSparkleCoreBlade>() },
+  { "Style10", "tracks/track1.wav", StylePtr<IniFireCoreBlade>() },
+};
+
 BladeConfig blades[] = {
- { 0, WS281XBladePtr<126, bladePin, Color8::GRB, PowerPINS<bladePowerPin2, bladePowerPin3> >()
-  , CONFIGARRAY(blade), "blade" },
- {
-   NO_BLADE, WS281XBladePtr<1, blade2Pin, Color8::GRB, PowerPINS<bladePowerPin4, bladePowerPin5> >()
-   , CONFIGARRAY(noblade), "noblade" },
+ { 0, WS281XBladePtr<126, bladePin, Color8::GRB, PowerPINS<bladePowerPin2, bladePowerPin3> >(),
+   CONFIGARRAY(presets), "blade" },
+ { NO_BLADE, WS281XBladePtr<1, blade2Pin, Color8::GRB, PowerPINS<bladePowerPin4, bladePowerPin5> >(),
+   CONFIGARRAY(presets), "noblade" },
 };
 #endif
 

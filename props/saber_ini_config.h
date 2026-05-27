@@ -112,7 +112,7 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 #include "color_resolver.h"
 #include "runtime_config.h"
 #include "ini_loader.h"
-#include "style_registry.h"
+
 #include "preset_builder.h"
 #include "button_profiles.h"
 #include "action_dispatch.h"
