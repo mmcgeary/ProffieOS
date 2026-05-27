@@ -9,7 +9,11 @@
 #endif
 
 #ifndef INI_MAX_PRESETS
+#if PROFFIEBOARD_VERSION - 0 == 2
+#define INI_MAX_PRESETS 5
+#else
 #define INI_MAX_PRESETS 20
+#endif
 #endif
 
 #define INI_MAX_SLOTS 34
