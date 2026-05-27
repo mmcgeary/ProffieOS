@@ -163,6 +163,45 @@ public:
     }
   }
 
+  // When INI is loaded, populate current_preset_ directly from INI data
+  // without reading or writing presets.ini. This keeps presets.ini as
+  // stock ProffieOS expects it (builtin references to config.h presets).
+  void SetPreset(int preset_num, bool announce) override {
+    if (!ini_loaded_ || !config_ || config_->num_presets == 0) {
+      PropBase::SetPreset(preset_num, announce);
+      return;
+    }
+
+    BladeSet previously_on = BladeOff();
+    SaveColorChangeIfNeeded();
+    FreeBladeStyles();
+
+    int idx = ((preset_num % config_->num_presets) + config_->num_presets) % config_->num_presets;
+    const IniPreset* p = &config_->presets[idx];
+
+    current_preset_.preset_num = idx;
+    current_preset_.font = p->font;
+    current_preset_.track = (p->track && p->track[0]) ? p->track : "";
+    current_preset_.name = (p->name && p->name[0]) ? p->name : "INI Preset";
+    current_preset_.variation = 0;
+
+    char style_buf[MAX_STYLE_STRING_LEN];
+    uint8_t style_blade_count = ResolveStyleBladeCount(config_, p);
+    for (int blade = 0; blade < NUM_BLADES; blade++) {
+      uint8_t src = (blade < style_blade_count) ? blade : (style_blade_count - 1);
+      int len = BuildIniStyleForBlade(p, src, style_buf, sizeof(style_buf));
+      current_preset_.current_style_[blade] = (len > 0) ? style_buf : "static 0,0,0";
+    }
+
+    AllocateBladeStyles();
+    chdir(current_preset_.font.get());
+    if (previously_on.on()) FastOn(EffectLocation(0, previously_on));
+    if (announce) {
+      PVLOG_STATUS << "Current Preset: " << current_preset_.name.get() << "\n";
+      SaberBase::DoNewFont();
+    }
+  }
+
   bool Parse(const char* cmd, const char* arg) override {
     if (streaming_mode_) {
       if (!strcmp(cmd, kEndIniMarker)) {
@@ -441,9 +480,6 @@ private:
       STDOUT.print("SaberIni: presets=");
       STDOUT.println(blade_in_config_->num_presets);
       ApplyGlobalConfig();
-      STDOUT.println("SaberIni: RegeneratePresetBanks");
-      RegeneratePresetBanks();
-      STDOUT.println("SaberIni: RegeneratePresetBanks done");
       ini_loaded_ = true;
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
