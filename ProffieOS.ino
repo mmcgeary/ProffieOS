@@ -27,7 +27,6 @@
 
 // #define CONFIG_FILE "config/YOUR_CONFIG_FILE_NAME_HERE.h"
 
- #define CONFIG_FILE "config/mhs4_ini.h"
 // #define CONFIG_FILE "config/proffieboard_v1_test_bench_config.h"
 // #define CONFIG_FILE "config/proffieboard_v2_testing_config.h"
 // #define CONFIG_FILE "config/td_proffieboard_config.h"
