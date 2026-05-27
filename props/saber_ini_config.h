@@ -185,12 +185,24 @@ public:
     current_preset_.name = (p->name && p->name[0]) ? p->name : "INI Preset";
     current_preset_.variation = 0;
 
-    char style_buf[MAX_STYLE_STRING_LEN];
     uint8_t style_blade_count = ResolveStyleBladeCount(config_, p);
     for (int blade = 0; blade < NUM_BLADES; blade++) {
       uint8_t src = (blade < style_blade_count) ? blade : (style_blade_count - 1);
-      int len = BuildIniStyleForBlade(p, src, style_buf, sizeof(style_buf));
-      current_preset_.current_style_[blade] = (len > 0) ? style_buf : "static 0,0,0";
+      const char* style_str = p->blades[src].style_name;
+      if (!style_str[0]) {
+        current_preset_.current_style_[blade] = mkstr("static 0,0,0");
+      } else if (strncmp(style_str, "builtin", 7) == 0) {
+        current_preset_.current_style_[blade] = mkstr(style_str);
+      } else {
+        int idx = atoi(style_str);
+        if (idx >= 0 && style_str[0] >= '0' && style_str[0] <= '9') {
+           char buf[32];
+           snprintf(buf, sizeof(buf), "builtin %d %d", idx, blade + 1);
+           current_preset_.current_style_[blade] = mkstr(buf);
+        } else {
+           current_preset_.current_style_[blade] = mkstr(style_str);
+        }
+      }
     }
 
     AllocateBladeStyles();
@@ -483,6 +495,7 @@ private:
       ini_loaded_ = true;
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
+      SetPreset(0, false);
     } else {
       STDOUT.println("SaberIni: LOAD_FAIL");
       ini_loaded_ = false;

@@ -37,13 +37,13 @@ public:
 
 class StyleFactory {
 public:
-  virtual ~StyleFactory() {}
   virtual BladeStyle* make() = 0;
 };
 
 template<class STYLE>
 class StyleFactoryImpl : public StyleFactory {
   BladeStyle* make() override {
+    STDERR << "Style RAM = " << sizeof(STYLE) << "\n";
     return new STYLE();
   }
 };

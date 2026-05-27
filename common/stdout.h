@@ -5,49 +5,28 @@
 
 #ifdef PROFFIE_TEST
 struct Print {
-  virtual ~Print() {}
-  void print(const char* s) { if (s) write((const uint8_t*)s, strlen(s)); }
+  void print(const char* s) { write((const uint8_t*)s, strlen(s)); }
   void print(float v) {
-    char tmp[64];
-    sprintf(tmp, "%f", (double)v);
-    print(tmp);
-  }
-  void print(double v) {
     char tmp[64];
     sprintf(tmp, "%f", v);
     print(tmp);
   }
-  void print(int v, int base = 10) {
+  void print(int v, int base) {
     char tmp[64];
-    sprintf(tmp, base == 16 ? "%x" : "%d", v);
-    print(tmp);
-  }
-  void print(unsigned int v, int base = 10) {
-    char tmp[64];
-    sprintf(tmp, base == 16 ? "%x" : "%u", v);
-    print(tmp);
-  }
-  void print(long v, int base = 10) {
-    char tmp[64];
-    sprintf(tmp, base == 16 ? "%lx" : "%ld", v);
-    print(tmp);
-  }
-  void print(unsigned long v, int base = 10) {
-    char tmp[64];
-    sprintf(tmp, base == 16 ? "%lx" : "%lu", v);
+    sprintf(tmp, "%d", v);
     print(tmp);
   }
   void write(char s) { write( (uint8_t) s); }
   template<class T>
   void println(T s) { print(s); write('\n'); }
   template<class T>
-  void println(T s, int base) { print(s, base); write('\n'); }
+  void println(T s, int base) { print(s); write('\n'); }
   virtual size_t write(uint8_t s) { putchar(s); return 1; }
   virtual size_t write(const uint8_t *buffer, size_t size) {
-    if (!buffer) return 0;
-    for (size_t i = 0; i < size; i++) putchar(buffer[i]);
+    for (size_t i = 0; i < size; i++) write(buffer[i]);
     return size;
   }
+
 };
 #endif
 

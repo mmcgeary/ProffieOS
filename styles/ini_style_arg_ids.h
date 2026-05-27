@@ -57,8 +57,13 @@ enum ArgId : int {
   kPostOffColorArg = 51,
   kIgnitionColorArg = 52,
   kIgnitionPowerUpArg = 53,
+  kLockupFadeArg = 54,
+  kClashFadeArg = 55,
+  kLockupSizeArg = 56,
+  kMeltBaseArg = 57,
+  kMeltAltArg = 58,
   kArgCount = kRainbowSpeedArg,
-  kExtendedArgCount = kIgnitionPowerUpArg,
+  kExtendedArgCount = kMeltAltArg,
 };
 
 // Legacy aliases kept for compatibility with existing template code.
@@ -69,5 +74,46 @@ static constexpr int kFirstTuningArg = kFlickerDepthArg;
 static constexpr int kTuningArgCount = kRainbowSpeedArg - kFlickerDepthArg + 1;
 
 }  // namespace ini_style_args
+
+#define BASE_COLOR_ARG ini_style_args::kBaseColorArg
+#define ALT_COLOR_ARG ini_style_args::kAltColorArg
+#define ALT_COLOR2_ARG ini_style_args::kAltColor2Arg
+#define ALT_COLOR3_ARG ini_style_args::kAltColor3Arg
+#define STYLE_OPTION_ARG ini_style_args::kStyleOptionArg
+#define IGNITION_OPTION_ARG ini_style_args::kIgnitionOptionArg
+#define IGNITION_OPTION2_ARG ini_style_args::kIgnitionOption2Arg
+#define RETRACTION_OPTION_ARG ini_style_args::kRetractionOptionArg
+#define RETRACTION_OPTION2_ARG ini_style_args::kRetractionOption2Arg
+#define SWING_OPTION_ARG ini_style_args::kSwingOptionArg
+#define IGNITION_TIME_ARG ini_style_args::kIgnitionTimeArg
+#define RETRACTION_TIME_ARG ini_style_args::kRetractionTimeArg
+#define IGNITION_DELAY_ARG ini_style_args::kIgnitionDelayArg
+#define RETRACTION_DELAY_ARG ini_style_args::kRetractionDelayArg
+#define IGNITION_POWER_UP_ARG ini_style_args::kIgnitionPowerUpArg
+#define IGNITION_COLOR_ARG ini_style_args::kIgnitionColorArg
+#define RETRACTION_COLOR_ARG ini_style_args::kRetractionColorArg
+#define RETRACTION_COOLDOWN_ARG ini_style_args::kRetractionCoolDownArg
+#define BLAST_COLOR_ARG ini_style_args::kBlastColorArg
+#define CLASH_COLOR_ARG ini_style_args::kClashColorArg
+#define LOCKUP_COLOR_ARG ini_style_args::kLockupColorArg
+#define LB_COLOR_ARG ini_style_args::kLbColorArg
+#define DRAG_COLOR_ARG ini_style_args::kDragColorArg
+#define STAB_COLOR_ARG ini_style_args::kStabColorArg
+#define EMITTER_COLOR_ARG ini_style_args::kEmitterColorArg
+#define PREON_COLOR_ARG ini_style_args::kPreonColorArg
+#define PREON_OPTION_ARG ini_style_args::kPreonOptionArg
+#define PREON_SIZE_ARG ini_style_args::kPreonSizeArg
+#define OFF_COLOR_ARG ini_style_args::kOffColorArg
+#define POST_OFF_COLOR_ARG ini_style_args::kPostOffColorArg
+#define SWING_COLOR_ARG ini_style_args::kSwingColorArg
+#define EMITTER_SIZE_ARG ini_style_args::kEmitterSizeArg
+#define DRAG_SIZE_ARG ini_style_args::kDragSizeArg
+#define MELT_SIZE_ARG ini_style_args::kMeltSizeArg
+#define LOCKUP_POSITION_ARG ini_style_args::kLockupPositionArg
+#define LOCKUP_FADE_ARG ini_style_args::kLockupFadeArg
+#define CLASH_FADE_ARG ini_style_args::kClashFadeArg
+#define LOCKUP_SIZE_ARG ini_style_args::kLockupSizeArg
+#define MELT_BASE_ARG ini_style_args::kMeltBaseArg
+#define MELT_ALT_ARG ini_style_args::kMeltAltArg
 
 #endif  // STYLES_INI_STYLE_ARG_IDS_H

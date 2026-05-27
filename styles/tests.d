@@ -839,7 +839,6 @@ tests: tests.cpp \
   ../functions/ramp.h rotate_color.h random_blink.h \
   ../functions/random_blink.h ../functions/effect_increment.h \
   ../functions/increment.h ../transitions/extend.h style_parser.h \
-  ini_style_templates.h ini_style_arg_ids.h random_flicker.h \
   test_types.h
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:
@@ -1759,7 +1758,4 @@ random_blink.h:
 ../functions/increment.h:
 ../transitions/extend.h:
 style_parser.h:
-ini_style_templates.h:
-ini_style_arg_ids.h:
-random_flicker.h:
 test_types.h:

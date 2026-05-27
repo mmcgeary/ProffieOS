@@ -74,24 +74,22 @@ private:
 template<class RPM, class LOWclass=Int<0>, class HIGHclass=Int<32768>>
 using Saw = SingleValueAdapter<SawSVF<RPM, LOWclass, HIGHclass>>;
 
-template<typename PULSE_RPM>
+template<typename PULSE_MILLIS>
 class PulsingFSVF {
 public:
-  PulsingFSVF() : last_micros_(micros()), pos_(0.0) {}
   void run(BladeBase* base) {
-    pulse_rpm_.run(base);
+    pulse_millis_.run(base);
   }
   int calculate(BladeBase* base) {
     uint32_t now = micros();
     uint32_t delta = now - last_micros_;
     last_micros_ = now;
-    // pulse_rpm_ is now Frequency (RPM), so higher value = faster pulse
-    pos_ = fract(pos_ + delta / 60000000.0 * pulse_rpm_.calculate(base));
+    pos_ = fract(pos_ + delta / (1000.0 * pulse_millis_.calculate(base)));
     return (sin_table[(int)floorf(pos_ * 0x400)] + 16384);
   }
 
 private:
-  PONUA SVFWrapper<PULSE_RPM> pulse_rpm_;
+  PONUA SVFWrapper<PULSE_MILLIS> pulse_millis_;
   uint32_t last_micros_;
   float pos_ = 0.0;
 };

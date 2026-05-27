@@ -291,7 +291,7 @@ protected:
 
   SaberBase() { Link(this); }
   explicit SaberBase(NoLink _) {}
-  virtual ~SaberBase() { Unlink(this); }
+  ~SaberBase() { Unlink(this); }
 
 public:
   enum OffType {

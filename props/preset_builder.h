@@ -3,8 +3,10 @@
 #define PROPS_PRESET_BUILDER_H
 
 #include "runtime_config.h"
-#include "style_registry.h"
 #include "../common/file_reader.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef INI_NUM_BLADES
 #define INI_NUM_BLADES 1
@@ -16,7 +18,19 @@ public:
                              uint8_t blade_idx,
                              char* buf,
                              int buf_size) {
-    return BuildIniStyleForBlade(preset, blade_idx, buf, buf_size);
+    const char* style_str = preset->blades[blade_idx].style_name;
+    if (!style_str[0]) {
+      return snprintf(buf, buf_size, "static 0,0,0");
+    } else if (strncmp(style_str, "builtin", 7) == 0) {
+      return snprintf(buf, buf_size, "%s", style_str);
+    } else {
+      int idx = atoi(style_str);
+      if (idx >= 0 && style_str[0] >= '0' && style_str[0] <= '9') {
+        return snprintf(buf, buf_size, "builtin %d %d", idx, blade_idx + 1);
+      } else {
+        return snprintf(buf, buf_size, "%s", style_str);
+      }
+    }
   }
 
   static bool WritePresetsFile(const RuntimeConfig* config, const char* filename) {
