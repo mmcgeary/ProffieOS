@@ -483,7 +483,6 @@ private:
       ini_loaded_ = true;
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
-      SetPreset(0, false);
     } else {
       STDOUT.println("SaberIni: LOAD_FAIL");
       ini_loaded_ = false;
