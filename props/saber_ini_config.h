@@ -434,22 +434,10 @@ public:
     const IniAction* action_map = IsOn() ? config_->action_map_on : config_->action_map_off;
     int slot = ResolveButtonSlot(button, event, modifiers, config_->global.num_buttons);
     if (slot < 0) {
-      STDOUT.print("SaberIni: Event2 slot=-1 btn=");
-      STDOUT.print((int)button);
-      STDOUT.print(" evt=");
-      STDOUT.print((int)event);
-      STDOUT.print(" num_buttons=");
-      STDOUT.println((int)config_->global.num_buttons);
       return false;
     }
     IniAction action = action_map[slot];
     if (action == ACTION_NONE) {
-      STDOUT.print("SaberIni: Event2 ACTION_NONE slot=");
-      STDOUT.print(slot);
-      STDOUT.print(" num_buttons=");
-      STDOUT.print((int)config_->global.num_buttons);
-      STDOUT.print(" ini_loaded=");
-      STDOUT.println(ini_loaded_);
       return false;
     }
     if (battle_mode_ && (action == ACTION_LOCKUP || action == ACTION_DRAG || action == ACTION_MELT || action == ACTION_STAB || action == ACTION_LOCKUP_OR_DRAG)) return true;
