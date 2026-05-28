@@ -89,6 +89,30 @@ NamedStyle named_styles[] = {
     StylePtr<ColorCycleX<RgbArg<1, Blue>, IntArg<3, 25>, IntArg<4, 100>, RgbArg<2, Cyan>, IntArg<5, 100>, IntArg<6, 3000>, IntArg<7, 5000>>>(),
     "Cycle blade, off color, on color, off percent, off rpm, on percent, on rpm, fade time"
   },
+  { "pulse",
+    StylePtr<Layers<
+      PulsingX<RgbArg<2, Cyan>, Black, IntArg<5, 1000>>,
+      InOutTrL<TrFadeX<IntArg<7, 1000>>, TrFadeX<IntArg<7, 1000>>, 
+               PulsingX<RgbArg<1, Blue>, Black, IntArg<3, 3000>>>
+    >>(),
+    "Pulse accent, off color, on color, off speed, unused, on speed, unused, fade time"
+  },
+  { "blink",
+    StylePtr<Layers<
+      BlinkingX<RgbArg<2, Cyan>, Black, IntArg<5, 1000>, IntArg<6, 500>>,
+      InOutTrL<TrFadeX<IntArg<7, 1000>>, TrFadeX<IntArg<7, 1000>>, 
+               BlinkingX<RgbArg<1, Blue>, Black, IntArg<3, 3000>, IntArg<4, 500>>>
+    >>(),
+    "Blink accent, off color, on color, off speed, off depth, on speed, on depth, fade time"
+  },
+  { "randomblink",
+    StylePtr<Layers<
+      RandomBlinkX<IntArg<5, 1000>, RgbArg<2, Cyan>, Black>,
+      InOutTrL<TrFadeX<IntArg<7, 1000>>, TrFadeX<IntArg<7, 1000>>, 
+               RandomBlinkX<IntArg<3, 3000>, RgbArg<1, Blue>, Black>>
+    >>(),
+    "Random blink accent, off color, on color, off speed, unused, on speed, unused, fade time"
+  },
   { "rainbow", StyleRainbowPtrX<IntArg<1, 300>, IntArg<2, 800>>(),
     "Rainbow blade, extension time, retraction time"
   },
