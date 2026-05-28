@@ -4,6 +4,7 @@
 #include "../common/preset.h"
 #include "../common/arg_parser.h"
 #include "../functions/int_arg.h"
+#include "ini_custom_styles.h"
 
 class NamedStyle {
 public:
@@ -44,6 +45,17 @@ BuiltinPresetAllocator builtin_preset_allocator;
 
 NamedStyle named_styles[] = {
 #ifndef DISABLE_BASIC_PARSER_STYLES
+  { "audio_flicker", StylePtr<IniAudioFlickerCoreBlade>(), "Audio Flicker" },
+  { "hump_flicker", StylePtr<IniHumpFlickerCoreBlade>(), "Hump Flicker" },
+  { "pulsing_stripes", StylePtr<IniPulsingStripesCoreBlade>(), "Pulsing Stripes" },
+  { "energy", StylePtr<IniEnergyCoreBlade>(), "Energy" },
+  { "fire_unstable", StylePtr<IniFireUnstableCoreBlade>(), "Fire Unstable" },
+  { "plasma_blade", StylePtr<IniPlasmaCoreBlade>(), "Plasma Blade" },
+  { "rainbow_blade", StylePtr<IniRainbowCoreBlade>(), "Rainbow" },
+  { "energy_blade", StylePtr<IniEnergyBladeCoreBlade>(), "Energy Blade" },
+  { "lava_blade", StylePtr<IniLavaCoreBlade>(), "Lava Blade" },
+  { "sparkle_blade", StylePtr<IniSparkleCoreBlade>(), "Sparkle Blade" },
+  { "fire_blade", StylePtr<IniFireCoreBlade>(), "Fire Blade" },
   { "standard", StyleNormalPtrX<RgbArg<1, CYAN>, RgbArg<2, WHITE>, IntArg<3, 300>, IntArg<4, 800>>(),
     "Standard blade, color, clash color, extension time, retraction time",
   },
