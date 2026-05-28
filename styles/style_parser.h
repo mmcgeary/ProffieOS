@@ -113,6 +113,22 @@ NamedStyle named_styles[] = {
     >>(),
     "Random blink accent, off color, on color, off speed, unused, on speed, unused, fade time"
   },
+  { "film",
+    StylePtr<Layers<
+      AudioFlicker<Stripes<8000,-2500,RgbArg<1,Blue>,Mix<Int<16000>,Black,RgbArg<1,Blue>>>,RgbArg<1,Blue>>,
+      ResponsiveLockupL<RgbArg<7,White>,TrInstant,TrFade<100>,Int<26000>>,
+      ResponsiveLightningBlockL<RgbArg<8,White>>,
+      ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>,
+      ResponsiveDragL<RgbArg<9,White>>,
+      ResponsiveClashL<RgbArg<6,White>,TrInstant,TrFade<200>,Int<26000>>,
+      ResponsiveBlastL<RgbArg<5,White>>,
+      ResponsiveBlastWaveL<RgbArg<5,White>>,
+      ResponsiveBlastFadeL<RgbArg<5,White>>,
+      ResponsiveStabL<RgbArg<10,White>>,
+      InOutTrL<TrWipeX<IntArg<12, 300>>,TrWipeInX<IntArg<13, 500>>>
+    >>(),
+    "Film style, base color, lockup, lb, drag, clash, blast, stab, ignition time, retraction time"
+  },
   { "rainbow", StyleRainbowPtrX<IntArg<1, 300>, IntArg<2, 800>>(),
     "Rainbow blade, extension time, retraction time"
   },
