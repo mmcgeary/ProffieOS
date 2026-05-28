@@ -273,15 +273,23 @@ public:
     SaveColorChangeIfNeeded();
     FreeBladeStyles();
 
+    if (config_->num_presets == 0) {
+      // Fallback if somehow ini_loaded_ is true but no presets exist
+      PropBase::SetPreset(preset_num, init);
+      return;
+    }
+
     int idx = ((preset_num % config_->num_presets) + config_->num_presets) % config_->num_presets;
     
     if (config_->active_preset_index != idx) {
+      LOCK_SD(true);
       if (IniLoader::LoadPreset(INI_CONFIG_FILE, idx, &config_->active_preset)) {
         config_->active_preset_index = idx;
       } else {
         STDOUT.print("SaberIni: Failed to stream preset ");
         STDOUT.println(idx + 1);
       }
+      LOCK_SD(false);
     }
     const IniPreset* p = &config_->active_preset;
 
@@ -610,7 +618,7 @@ private:
     STDOUT.println("SaberIni: IniLoader::Load done");
     LOCK_SD(false);
 
-    if (loaded) {
+    if (loaded && blade_in_config_->num_presets > 0) {
       STDOUT.print("SaberIni: presets=");
       STDOUT.println(blade_in_config_->num_presets);
       ApplyGlobalConfig();
@@ -619,8 +627,17 @@ private:
       STDOUT.println("SaberIni: LOAD_OK");
       SetPreset(0, false);
     } else {
-      STDOUT.println("SaberIni: LOAD_FAIL");
+      if (loaded) {
+        STDOUT.println("SaberIni: INI has 0 presets (fallback)");
+      } else {
+        STDOUT.println("SaberIni: LOAD_FAIL");
+      }
       ini_loaded_ = false;
+      // Do not disable retries here, let the normal retry logic handle it if it wasn't loaded.
+      // If it WAS loaded but had 0 presets, we probably don't need to retry, but we'll let it retry just in case it was a partial read.
+      if (loaded) {
+        next_ini_load_attempt_ms_ = kIniLoadRetryDisabled;
+      }
     }
   }
 
