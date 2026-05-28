@@ -86,13 +86,8 @@ NamedStyle named_styles[] = {
     "Stroboscope, standby color, flash color, flash frequency, flash milliseconds, extension time, retraction time"
   },
   { "cycle",
-    StylePtr<ColorCycle<RgbArg<1, Blue>,0,1,Layers<
-        AudioFlicker<RgbArg<3, Cyan>, RgbArg<2, Blue>>,
-        BlastL<RgbArg<4, Rgb<255,50,50>>>,
-        LockupL<HumpFlicker<RgbArg<5, Red>, RgbArg<3, Cyan>,100>>,
-        SimpleClashL<White>>,
-      100,2000,1000>>(),
-    "Cycle blade, start color, base color, flicker color, blast color, lockup color"
+    StylePtr<ColorCycleX<RgbArg<1, Blue>, IntArg<3, 25>, IntArg<4, 100>, RgbArg<2, Cyan>, IntArg<5, 100>, IntArg<6, 3000>, IntArg<7, 5000>>>(),
+    "Cycle blade, off color, on color, off percent, off rpm, on percent, on rpm, fade time"
   },
   { "rainbow", StyleRainbowPtrX<IntArg<1, 300>, IntArg<2, 800>>(),
     "Rainbow blade, extension time, retraction time"
