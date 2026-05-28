@@ -141,6 +141,11 @@ private:
       SetGestureFlag(val, g, GESTURE_FORCE_PUSH);
     } else if (strcasecmp(key, "melt") == 0) {
       SetGestureFlag(val, g, GESTURE_MELT);
+    } else if (strncasecmp(key, "blade", 5) == 0 && strstr(key, "_length") != nullptr) {
+      int blade_num = atoi(key + 5);
+      if (blade_num >= 1 && blade_num <= 10) {
+        g->blade_length[blade_num - 1] = atoi(val);
+      }
     }
   }
 
@@ -183,22 +188,30 @@ private:
   }
 
   static bool ParseColorField(const char* key, const char* val, IniBladeStyle* blade) {
-    char* target = nullptr;
-    if (strcasecmp(key, "base_color") == 0) target = blade->base_color;
-    else if (strcasecmp(key, "alt_color") == 0) target = blade->alt_color;
-    else if (strcasecmp(key, "blast_color") == 0) target = blade->blast_color;
-    else if (strcasecmp(key, "clash_color") == 0) target = blade->clash_color;
-    else if (strcasecmp(key, "lockup_color") == 0) target = blade->lockup_color;
-    else if (strcasecmp(key, "drag_color") == 0) target = blade->drag_color;
-    else if (strcasecmp(key, "lb_color") == 0) target = blade->lb_color;
-    else if (strcasecmp(key, "stab_color") == 0) target = blade->stab_color;
-    else if (strcasecmp(key, "swing_color") == 0) target = blade->swing_color;
-    else if (strcasecmp(key, "emitter_color") == 0) target = blade->emitter_color;
-    else if (strcasecmp(key, "preon_color") == 0) target = blade->preon_color;
-    else if (strcasecmp(key, "off_color") == 0) target = blade->off_color;
+    int color_idx = -1;
+    if (strcasecmp(key, "base_color") == 0) color_idx = 0;
+    else if (strcasecmp(key, "alt_color") == 0) color_idx = 1;
+    else if (strcasecmp(key, "blast_color") == 0) color_idx = 2;
+    else if (strcasecmp(key, "clash_color") == 0) color_idx = 3;
+    else if (strcasecmp(key, "lockup_color") == 0) color_idx = 4;
+    else if (strcasecmp(key, "drag_color") == 0) color_idx = 5;
+    else if (strcasecmp(key, "lb_color") == 0) color_idx = 6;
+    else if (strcasecmp(key, "stab_color") == 0) color_idx = 7;
+    else if (strcasecmp(key, "swing_color") == 0) color_idx = 8;
+    else if (strcasecmp(key, "emitter_color") == 0) color_idx = 9;
+    else if (strcasecmp(key, "preon_color") == 0) color_idx = 10;
+    else if (strcasecmp(key, "off_color") == 0) color_idx = 11;
 
-    if (!target) return false;
-    ColorToStyleArg(val, target, 20);
+    if (color_idx < 0) return false;
+
+    uint16_t r, g, b;
+    if (!ResolveColor(val, &r, &g, &b)) {
+      r = g = b = 65535;
+    }
+    blade->colors[color_idx].r = r >> 8;
+    blade->colors[color_idx].g = g >> 8;
+    blade->colors[color_idx].b = b >> 8;
+    blade->set_colors_mask |= (1 << color_idx);
     return true;
   }
 

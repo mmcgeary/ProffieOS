@@ -170,18 +170,11 @@ struct IniBladeStyle {
   };
 
   char style_name[INI_MAX_STYLE_NAME_LEN];
-  char base_color[20];
-  char alt_color[20];
-  char blast_color[20];
-  char clash_color[20];
-  char lockup_color[20];
-  char drag_color[20];
-  char lb_color[20];
-  char stab_color[20];
-  char swing_color[20];
-  char emitter_color[20];
-  char preon_color[20];
-  char off_color[20];
+  struct IniColor {
+    uint8_t r, g, b;
+  };
+  IniColor colors[12];
+  uint16_t set_colors_mask = 0;
   uint16_t ignition_time;
   uint16_t retraction_time;
   uint16_t flicker_depth;
@@ -248,18 +241,7 @@ struct IniBladeStyle {
 
   void SetDefaults() {
     strcpy(style_name, "audio_flicker");
-    strcpy(base_color, "0,0,65535");
-    strcpy(alt_color, "0,65535,65535");
-    strcpy(blast_color, "65535,65535,65535");
-    strcpy(clash_color, "65535,65535,65535");
-    strcpy(lockup_color, "65535,65535,65535");
-    strcpy(drag_color, "65535,20560,0");
-    strcpy(lb_color, "0,65535,65535");
-    strcpy(stab_color, "65535,65535,65535");
-    strcpy(swing_color, "0,0,0");
-    strcpy(emitter_color, "0,0,65535");
-    strcpy(preon_color, "0,0,65535");
-    strcpy(off_color, "0,0,0");
+    set_colors_mask = 0;
 
     ignition_time = 300;
     retraction_time = 200;
@@ -329,6 +311,7 @@ struct IniGlobalConfig {
   uint8_t gesture_flags;
   uint8_t num_buttons;
   char button_profile[INI_MAX_KEY_LEN];
+  int16_t blade_length[10];
 
   void SetDefaults() {
     volume = 80;
@@ -336,6 +319,7 @@ struct IniGlobalConfig {
     gesture_flags = GESTURE_TWIST_ON | GESTURE_TWIST_OFF;
     num_buttons = ResolveRuntimeDefaultButtonCount();
     strcpy(button_profile, "default");
+    for (int i = 0; i < 10; ++i) blade_length[i] = -1;
   }
 };
 

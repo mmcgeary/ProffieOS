@@ -142,19 +142,6 @@ static void BuildArgStyleString(const char* base_style,
   // We build it slot by slot; unknown slots get "~".
   const int kMaxSlot = kExtendedArgCount;
 
-  // Helper lambda-equivalent: resolve a color field into "r,g,b" or null.
-  auto color_arg = [](const char* field, char* buf, int bufsz) -> bool {
-    uint16_t r16, g16, b16;
-    if (!field || !field[0]) return false;
-    if (!ResolveColor(field, &r16, &g16, &b16)) return false;
-    // RgbArg reads 8-bit values (strtol 0-255 from the style string).
-    snprintf(buf, bufsz, "%u,%u,%u",
-             (unsigned)(r16 >> 8),
-             (unsigned)(g16 >> 8),
-             (unsigned)(b16 >> 8));
-    return true;
-  };
-
   // Start with the base style string.
   size_t pos = strlcpy(out, base_style, out_size);
 
@@ -164,23 +151,23 @@ static void BuildArgStyleString(const char* base_style,
     const char* val = nullptr;
     bool is_color = false;
 
+    int color_idx = -1;
+
     switch (slot) {
-      case kBaseColorArg:       val = blade->base_color;      is_color = true; break;
-      case kAltColorArg:        val = blade->alt_color;       is_color = true; break;
-      case kStyleOptionArg:     /* no ini field — emit ~ */   break;
-      case kIgnitionOptionArg:  /* no ini field — emit ~ */   break;
-      case kBlastColorArg:      val = blade->blast_color;     is_color = true; break;
-      case kClashColorArg:      val = blade->clash_color;     is_color = true; break;
-      case kLockupColorArg:     val = blade->lockup_color;    is_color = true; break;
-      case kLbColorArg:         val = blade->lb_color;        is_color = true; break;
-      case kDragColorArg:       val = blade->drag_color;      is_color = true; break;
-      case kStabColorArg:       val = blade->stab_color;      is_color = true; break;
-      case kEmitterColorArg:    val = blade->emitter_color;   is_color = true; break;
+      case kBaseColorArg:       color_idx = 0;  is_color = true; break;
+      case kAltColorArg:        color_idx = 1;  is_color = true; break;
+      case kBlastColorArg:      color_idx = 2;  is_color = true; break;
+      case kClashColorArg:      color_idx = 3;  is_color = true; break;
+      case kLockupColorArg:     color_idx = 4;  is_color = true; break;
+      case kLbColorArg:         color_idx = 5;  is_color = true; break;
+      case kDragColorArg:       color_idx = 6;  is_color = true; break;
+      case kStabColorArg:       color_idx = 7;  is_color = true; break;
+      case kSwingColorArg:      color_idx = 8;  is_color = true; break;
+      case kEmitterColorArg:    color_idx = 9;  is_color = true; break;
+      case kPreonColorArg:      color_idx = 10; is_color = true; break;
+      case kOffColorArg:        color_idx = 11; is_color = true; break;
       case kIgnitionTimeArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->ignition_time);   val = slot_buf; break;
       case kRetractionTimeArg:  snprintf(slot_buf, sizeof(slot_buf), "%u", blade->retraction_time); val = slot_buf; break;
-      case kOffColorArg:        val = blade->off_color;       is_color = true; break;
-      case kOffModeArg:         /* handled separately */      break;
-      case kOffRateMsArg:       /* handled separately */      break;
       case kFlickerDepthArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->flicker_depth);   val = slot_buf; break;
       case kFlickerSpeedArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->flicker_speed);   val = slot_buf; break;
       case kStripeWidthArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->stripe_width);    val = slot_buf; break;
@@ -195,17 +182,20 @@ static void BuildArgStyleString(const char* base_style,
       case kHeatRandArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->heat_rand);       val = slot_buf; break;
       case kFireCoolingArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->fire_cooling);    val = slot_buf; break;
       case kRainbowSpeedArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->rainbow_speed);   val = slot_buf; break;
-      case kAltColor2Arg:       /* ALT_COLOR2 — no direct field */ break;
-      case kAltColor3Arg:       /* ALT_COLOR3 — no direct field */ break;
       default:                  break;
     }
 
-    // If a color field, resolve it to slot_buf.
-    if (is_color && val && val[0]) {
-      if (!color_arg(val, slot_buf, sizeof(slot_buf))) {
-        val = nullptr; // failed resolution — fall through to ~
-      } else {
+    // If a color field, format it.
+    if (is_color) {
+      if (blade->set_colors_mask & (1 << color_idx)) {
+        // Restore 16-bit encoding via * 257 for RgbArg
+        snprintf(slot_buf, sizeof(slot_buf), "%u,%u,%u",
+                 (unsigned)(blade->colors[color_idx].r * 257),
+                 (unsigned)(blade->colors[color_idx].g * 257),
+                 (unsigned)(blade->colors[color_idx].b * 257));
         val = slot_buf;
+      } else {
+        val = nullptr; // failed resolution — fall through to ~
       }
     }
 
@@ -407,6 +397,18 @@ public:
       char profile_line[160];
       BuildHardwareProfileLine(
           num_blades, num_buttons, has_blade_detect, blade_detected, profile_line, sizeof(profile_line));
+      
+      if (current_config) {
+#define APPEND_BLADE_LENGTH(N) \
+        if (current_config->blade##N) { \
+          int l = this->GetBladeLength(N); \
+          if (l == -1) l = current_config->blade##N->num_leds(); \
+          snprintf(profile_line + strlen(profile_line), sizeof(profile_line) - strlen(profile_line), " blade%d_length=%d", N, l); \
+        }
+        ONCEPERBLADE(APPEND_BLADE_LENGTH);
+#undef APPEND_BLADE_LENGTH
+      }
+
       STDOUT.println(profile_line);
       return true;
     }
