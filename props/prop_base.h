@@ -390,6 +390,16 @@ public:
 #endif
 #define SET_BLADE_STYLE(N) do {                                           \
       BladeStyle* tmp = style_parser.Parse(current_preset_.GetStyle(N));  \
+      if (!tmp) {                                                         \
+        STDOUT.print("ERROR: Invalid style string for blade ");           \
+        STDOUT.print(N);                                                  \
+        STDOUT.print(" in preset ");                                      \
+        STDOUT.println(current_preset_.preset_num + 1);                   \
+        STDOUT.print("  Style was: ");                                    \
+        STDOUT.println(current_preset_.GetStyle(N));                      \
+        STDOUT.println("  Falling back to built-in C++ demo style.");     \
+        tmp = style_parser.Parse("builtin 0 " #N);                        \
+      }                                                                   \
     WRAP_BLADE_SHORTERNER(N)                                              \
     current_config->blade##N->SetStyle(tmp);                              \
   } while (0);
