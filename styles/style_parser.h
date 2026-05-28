@@ -56,6 +56,7 @@ NamedStyle named_styles[] = {
   { "lava_blade", StylePtr<IniLavaCoreBlade>(), "Lava Blade" },
   { "sparkle_blade", StylePtr<IniSparkleCoreBlade>(), "Sparkle Blade" },
   { "fire_blade", StylePtr<IniFireCoreBlade>(), "Fire Blade" },
+  { "film_blade", StylePtr<IniFilmCoreBlade>(), "Film Blade" },
   { "standard", StyleNormalPtrX<RgbArg<1, CYAN>, RgbArg<2, WHITE>, IntArg<3, 300>, IntArg<4, 800>>(),
     "Standard blade, color, clash color, extension time, retraction time",
   },
