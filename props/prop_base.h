@@ -378,6 +378,16 @@ public:
     ONCEPERBLADE(UNSET_BLADE_STYLE)
   }
 
+  void PrintInvalidStyleError(int blade_num, int preset_num, const char* style_str) {
+    STDOUT.print("ERROR: Invalid style string for blade ");
+    STDOUT.print(blade_num);
+    STDOUT.print(" in preset ");
+    STDOUT.println(preset_num + 1);
+    STDOUT.print("  Style was: ");
+    STDOUT.println(style_str);
+    STDOUT.println("  Falling back to built-in C++ demo style.");
+  }
+
   void AllocateBladeStyles() {
 #ifdef DYNAMIC_BLADE_LENGTH
     savestate_.ReadINIFromSaveDir("curstate");
@@ -391,13 +401,7 @@ public:
 #define SET_BLADE_STYLE(N) do {                                           \
       BladeStyle* tmp = style_parser.Parse(current_preset_.GetStyle(N));  \
       if (!tmp) {                                                         \
-        STDOUT.print("ERROR: Invalid style string for blade ");           \
-        STDOUT.print(N);                                                  \
-        STDOUT.print(" in preset ");                                      \
-        STDOUT.println(current_preset_.preset_num + 1);                   \
-        STDOUT.print("  Style was: ");                                    \
-        STDOUT.println(current_preset_.GetStyle(N));                      \
-        STDOUT.println("  Falling back to built-in C++ demo style.");     \
+        PrintInvalidStyleError(N, current_preset_.preset_num, current_preset_.GetStyle(N)); \
         tmp = style_parser.Parse("builtin 0 " #N);                        \
       }                                                                   \
     WRAP_BLADE_SHORTERNER(N)                                              \
