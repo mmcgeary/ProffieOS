@@ -177,6 +177,8 @@ struct IniBladeStyle {
   uint16_t set_colors_mask = 0;
   uint16_t ignition_time;
   uint16_t retraction_time;
+  uint8_t off_mode;
+  uint16_t off_rate_ms;
   uint16_t flicker_depth;
   uint16_t flicker_speed;
   uint16_t stripe_width;
@@ -245,6 +247,8 @@ struct IniBladeStyle {
 
     ignition_time = 300;
     retraction_time = 200;
+    off_mode = OFF_MODE_PULSE;
+    off_rate_ms = 1200;
     flicker_depth = 12000;
     flicker_speed = 1000;
     stripe_width = 5000;
@@ -276,8 +280,6 @@ struct IniPreset {
 
   char accent_style[INI_MAX_STYLE_NAME_LEN];
   uint16_t accent_speed;
-  uint8_t off_mode;
-  uint16_t off_rate_ms;
 
   static uint8_t ClampBladeCount(uint8_t count) {
     if (count < 1) return 1;
@@ -300,8 +302,6 @@ struct IniPreset {
 
     accent_style[0] = 0;
     accent_speed = 1000;
-    off_mode = OFF_MODE_PULSE;
-    off_rate_ms = 1200;
   }
 };
 

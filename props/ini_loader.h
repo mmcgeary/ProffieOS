@@ -170,15 +170,15 @@ private:
     }
   }
 
-  static void ParseOffMode(const char* val, IniPreset* p) {
+  static void ParseOffMode(const char* val, IniBladeStyle* b) {
     if (strcasecmp(val, "pulse") == 0) {
-      p->off_mode = OFF_MODE_PULSE;
+      b->off_mode = OFF_MODE_PULSE;
     } else if (strcasecmp(val, "random") == 0) {
-      p->off_mode = OFF_MODE_RANDOM;
+      b->off_mode = OFF_MODE_RANDOM;
     } else if (strcmp(val, "0") == 0) {
-      p->off_mode = OFF_MODE_PULSE;
+      b->off_mode = OFF_MODE_PULSE;
     } else if (strcmp(val, "1") == 0) {
-      p->off_mode = OFF_MODE_RANDOM;
+      b->off_mode = OFF_MODE_RANDOM;
     }
   }
 
@@ -299,6 +299,12 @@ private:
     } else if (strcasecmp(key, "rainbow_speed") == 0) {
       blade->rainbow_speed = constrain(atoi(val), 1, 20000);
       return true;
+    } else if (strcasecmp(key, "off_mode") == 0) {
+      ParseOffMode(val, blade);
+      return true;
+    } else if (strcasecmp(key, "off_rate_ms") == 0) {
+      blade->off_rate_ms = constrain(atoi(val), 10, 60000);
+      return true;
     }
     return ParseColorField(key, val, blade);
   }
@@ -330,10 +336,6 @@ private:
       p->accent_style[INI_MAX_STYLE_NAME_LEN - 1] = 0;
     } else if (strcasecmp(key, "accent_speed") == 0) {
       p->accent_speed = constrain(atoi(val), 100, 10000);
-    } else if (strcasecmp(key, "off_mode") == 0) {
-      ParseOffMode(val, p);
-    } else if (strcasecmp(key, "off_rate_ms") == 0) {
-      p->off_rate_ms = constrain(atoi(val), 10, 60000);
     } else if (ParseBladeField(key, val, &p->blades[0])) {
     }
   }

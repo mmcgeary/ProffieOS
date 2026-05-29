@@ -180,6 +180,8 @@ static void BuildArgStyleString(const char* base_style,
       case kEmitterColorArg:    color_idx = 9;  is_color = true; break;
       case kPreonColorArg:      color_idx = 10; is_color = true; break;
       case kOffColorArg:        color_idx = 11; is_color = true; break;
+      case kOffOptionArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->off_mode == OFF_MODE_RANDOM ? 2 : blade->off_mode == OFF_MODE_PULSE ? 1 : 0); val = slot_buf; break;
+      case kRetractionCoolDownArg: snprintf(slot_buf, sizeof(slot_buf), "%u", blade->off_rate_ms); val = slot_buf; break;
       case kIgnitionTimeArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->ignition_time);   val = slot_buf; break;
       case kRetractionTimeArg:  snprintf(slot_buf, sizeof(slot_buf), "%u", blade->retraction_time); val = slot_buf; break;
       case kFlickerDepthArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->flicker_depth);   val = slot_buf; break;
