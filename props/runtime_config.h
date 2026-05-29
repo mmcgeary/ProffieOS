@@ -306,6 +306,7 @@ struct IniPreset {
 };
 
 struct IniGlobalConfig {
+  uint16_t max_volume;
   uint16_t volume;
   uint8_t clash_threshold;
   uint8_t gesture_flags;
@@ -319,6 +320,11 @@ struct IniGlobalConfig {
   int16_t blade_length[10];
 
   void SetDefaults() {
+#ifdef VOLUME
+    max_volume = VOLUME;
+#else
+    max_volume = 3000;
+#endif
     volume = 1000;
     clash_threshold = 8;
     gesture_flags = 0;

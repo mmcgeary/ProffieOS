@@ -54,6 +54,7 @@ inline void BuildHardwareProfileLine(int num_blades,
                                      int num_buttons,
                                      bool has_blade_detect,
                                      bool blade_detected,
+                                     int max_volume,
                                      char* out,
                                      size_t out_size) {
   if (!out || out_size == 0) return;
@@ -64,7 +65,7 @@ inline void BuildHardwareProfileLine(int num_blades,
            NormalizeHardwareCountForProfile(num_buttons),
            has_blade_detect ? 1 : 0,
            blade_detected ? 1 : 0,
-           3000);
+           max_volume);
 }
 
 inline const char* NormalizeIniBankArg(const char* arg) {
@@ -408,8 +409,9 @@ public:
       constexpr bool blade_detected = false;
 #endif
       char profile_line[160];
+      int max_vol = profile_cfg ? profile_cfg->global.max_volume : 3000;
       BuildHardwareProfileLine(
-          num_blades, num_buttons, has_blade_detect, blade_detected, profile_line, sizeof(profile_line));
+          num_blades, num_buttons, has_blade_detect, blade_detected, max_vol, profile_line, sizeof(profile_line));
       
       if (current_config) {
 #define APPEND_BLADE_LENGTH(N) \
@@ -479,8 +481,8 @@ public:
 
   void ToggleColorChangeMode() { color_change_mode_ = !color_change_mode_; }
   void PlayQuote() { SaberBase::DoEffect(EFFECT_FORCE, 0); }
-  void VolumeUp() { if (config_ && dynamic_mixer.get_volume() < 3000) { dynamic_mixer.set_volume(std::min<int>(3000, dynamic_mixer.get_volume() + 300)); beeper.Beep(0.5, 2000); } }
-  void VolumeDown() { if (config_ && dynamic_mixer.get_volume() > 0) { dynamic_mixer.set_volume(std::max<int>(0, dynamic_mixer.get_volume() - 300)); beeper.Beep(0.5, 1000); } }
+  void VolumeUp() { if (config_ && dynamic_mixer.get_volume() < config_->global.max_volume) { dynamic_mixer.set_volume(std::min<int>(config_->global.max_volume, dynamic_mixer.get_volume() + config_->global.max_volume / 10)); beeper.Beep(0.5, 2000); } }
+  void VolumeDown() { if (config_ && dynamic_mixer.get_volume() > 0) { dynamic_mixer.set_volume(std::max<int>(0, dynamic_mixer.get_volume() - config_->global.max_volume / 10)); beeper.Beep(0.5, 1000); } }
   void OnOrVolumeUp() { if (!mode_volume_) On(); else VolumeUp(); }
   void NextPresetOrVolumeDown() { if (!mode_volume_) next_preset(); else VolumeDown(); }
   void PrevPresetIfNotVolumeMenu() { if (!mode_volume_) previous_preset(); }
@@ -708,7 +710,7 @@ private:
 
   void ApplyGlobalConfig() {
     if (!config_) return;
-    uint32_t vol = std::min<uint32_t>(config_->global.volume, 3000);
+    uint32_t vol = std::min<uint32_t>(config_->global.volume, config_->global.max_volume);
     dynamic_mixer.set_volume(vol);
 
 #ifdef DYNAMIC_BLADE_DIMMING
