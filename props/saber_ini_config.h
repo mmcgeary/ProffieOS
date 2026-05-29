@@ -579,6 +579,16 @@ private:
   void LoadIniConfig(bool force = false) {
     const uint32_t now = millis();
     if (!ShouldAttemptIniLoad(force, ini_loaded_, blade_in_config_ != nullptr, now, next_ini_load_attempt_ms_)) return;
+
+#ifdef ENABLE_AUDIO
+    // Avoid truncating boot.wav: loading INI calls SetPreset/chdir, which stops active wav players.
+    // Defer initial INI load until boot audio has finished.
+    if (GetWavPlayerPlaying(&SFX_boot)) {
+      next_ini_load_attempt_ms_ = ResolveNextIniLoadAttemptOnMissing(now);
+      return;
+    }
+#endif
+
     next_ini_load_attempt_ms_ = now + kIniLoadRetryMs;
     STDOUT.println("SaberIni: Loading...");
     if (!blade_in_config_) return;

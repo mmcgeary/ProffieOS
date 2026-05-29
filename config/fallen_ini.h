@@ -37,7 +37,7 @@ Preset presets[] = {
   { "Huntress", "tracks/track1.wav", StylePtr<IniColorCycleCoreBlade>(),StylePtr<IniColorCycleCoreBlade>()  },
 };
     BladeConfig blades[] = {
-     { 0, WS281XBladePtr<144, bladePin, Color8::GRB, PowerPINS<bladePowerPin2, bladePowerPin3> >(),
+     { 0, WS281XBladePtr<130, bladePin, Color8::GRB, PowerPINS<bladePowerPin2, bladePowerPin3> >(),
         WS281XBladePtr<1, blade2Pin, Color8::GRB, PowerPINS<bladePowerPin4> >()
       , CONFIGARRAY(presets) },
     };
