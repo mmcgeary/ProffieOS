@@ -257,11 +257,10 @@ public:
   }
 
   void FindBlade(bool announce = false) {
-    PropBase::FindBlade(announce);
-    if (ini_loaded_) {
-      SetPreset(0, false);
-      PlayAlert(INI_ALERT_LOADED);
+    if (!ini_loaded_) {
+      LoadIniConfig(false, true);
     }
+    PropBase::FindBlade(announce);
   }
 
   // When INI is loaded, populate current_preset_ directly from INI data
@@ -471,7 +470,7 @@ public:
       }
       DetectTwist();
     }
-    if (!ini_loaded_) LoadIniConfig();
+    if (!ini_loaded_) LoadIniConfig(false, false);
   }
 
   void Off(OffType off_type = OFF_NORMAL, EffectLocation location = EffectLocation()) override {
@@ -591,14 +590,14 @@ private:
     return true;
   }
 
-  void LoadIniConfig(bool force = false) {
+  void LoadIniConfig(bool force = false, bool is_boot = false) {
     const uint32_t now = millis();
     if (!ShouldAttemptIniLoad(force, ini_loaded_, blade_in_config_ != nullptr, now, next_ini_load_attempt_ms_)) return;
 
 #ifdef ENABLE_AUDIO
     // Avoid truncating boot.wav: loading INI calls SetPreset/chdir, which stops active wav players.
     // Defer initial INI load until boot audio has finished.
-    if (GetWavPlayerPlaying(&SFX_boot)) {
+    if (!is_boot && GetWavPlayerPlaying(&SFX_boot)) {
       next_ini_load_attempt_ms_ = ResolveNextIniLoadAttemptOnMissing(now);
       return;
     }
@@ -641,9 +640,11 @@ private:
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
       SetPreset(0, false);
+      if (!is_boot) {
 #ifdef ENABLE_AUDIO
-      SaberBase::DoBoot();
+        SaberBase::DoBoot();
 #endif
+      }
     } else {
       if (loaded) {
         STDOUT.println("SaberIni: INI has 0 presets (fallback)");
