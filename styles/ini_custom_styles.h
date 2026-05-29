@@ -36,12 +36,12 @@ using IniCoreWrapper = Layers<
     TrSelect<IntArg<IGNITION_MODE_ARG, 0>,
       TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,
       TrFadeX<IntArg<IGNITION_TIME_ARG,300>>,
-      TrConcat<TrInstant, AlphaL<RgbArg<SPARK_COLOR_ARG,White>, Bump<Int<0>, IntArg<SPARK_SIZE_ARG, 2000>>>, TrWipeX<IntArg<IGNITION_TIME_ARG,300>>>
+      TrWipeSparkTipX<RgbArg<SPARK_COLOR_ARG,White>, IntArg<IGNITION_TIME_ARG,300>, IntArg<SPARK_SIZE_ARG, 2000>>
     >,
     TrSelect<IntArg<RETRACTION_MODE_ARG, 0>,
       TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,
       TrFadeX<IntArg<RETRACTION_TIME_ARG,500>>,
-      TrConcat<TrInstant, AlphaL<RgbArg<SPARK_COLOR_ARG,White>, Bump<Int<32768>, IntArg<SPARK_SIZE_ARG, 2000>>>, TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>>
+      TrWipeInSparkTipX<RgbArg<SPARK_COLOR_ARG,White>, IntArg<RETRACTION_TIME_ARG,500>, IntArg<SPARK_SIZE_ARG, 2000>>
     >,
     ColorSelect<IntArg<OFF_OPTION_ARG, 0>, TrInstant,
       RgbArg<OFF_COLOR_ARG,Black>,

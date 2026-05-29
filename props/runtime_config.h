@@ -287,7 +287,7 @@ struct IniBladeStyle {
     retraction_mode = 0; 
    
     clash_width = 50;    
-    blast_size = 100;    
+    blast_size = 2000;    
     blast_speed = 400;   
     spark_size = 2000;   
     drag_size = 2000;    
