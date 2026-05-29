@@ -107,6 +107,18 @@ inline uint32_t ResolveNextIniLoadAttemptOnMissing(uint32_t now_ms) {
 
 #ifndef PROFFIE_TEST
 
+uint32_t current_idle_off_time = 600000;
+#define IDLE_OFF_TIME current_idle_off_time
+
+uint32_t current_motion_timeout = 900000;
+#define MOTION_TIMEOUT current_motion_timeout
+
+uint16_t current_short_click_timeout = 500;
+#define BUTTON_SHORT_CLICK_TIMEOUT current_short_click_timeout
+
+uint16_t current_double_click_timeout = 500;
+#define BUTTON_DOUBLE_CLICK_TIMEOUT current_double_click_timeout
+
 #include "prop_base.h"
 #include "ini_parser.h"
 #include "color_resolver.h"
