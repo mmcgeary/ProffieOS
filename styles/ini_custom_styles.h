@@ -12,16 +12,44 @@
 template<class BASE>
 using IniCoreWrapper = Layers<
   BASE,
-  ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<LOCKUP_FADE_ARG,100>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
+  ColorSelect<IntArg<LOCKUP_MODE_ARG, 0>, TrInstant,
+    ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<LOCKUP_FADE_ARG,100>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
+    LockupL<RgbArg<LOCKUP_COLOR_ARG,White>>
+  >,
   ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>,
-  ResponsiveMeltL<Mix<TwistAngle<>,RgbArg<MELT_BASE_ARG,Red>,RgbArg<MELT_ALT_ARG,Yellow>>>,
-  ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>>,
-  ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<CLASH_FADE_ARG,200>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
-  ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>>,
-  ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>,
-  ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>,
-  ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>,
-  InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,ColorSelect<IntArg<OFF_OPTION_ARG, 0>, TrInstant, RgbArg<OFF_COLOR_ARG,Black>, PulsingX<RgbArg<OFF_COLOR_ARG,Black>, Black, IntArg<RETRACTION_COOL_DOWN_ARG, 1200>>, RandomPerLEDFlicker<RgbArg<OFF_COLOR_ARG,Black>, Black>>>
+  ResponsiveMeltL<Mix<TwistAngle<>,RgbArg<MELT_BASE_ARG,Red>,RgbArg<MELT_ALT_ARG,Yellow>>,TrWipeIn<600>,TrWipe<600>,IntArg<MELT_SIZE_ARG,4000>>,
+  ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>,TrInstant,TrInstant,IntArg<DRAG_SIZE_ARG,2000>>,
+  ColorSelect<IntArg<CLASH_MODE_ARG, 0>, TrInstant,
+    ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<CLASH_FADE_ARG,200>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
+    SimpleClashL<RgbArg<CLASH_COLOR_ARG,White>, 40>,
+    LocalizedClashL<RgbArg<CLASH_COLOR_ARG,White>, 40, IntArg<CLASH_WIDTH_ARG, 50>>
+  >,
+  ColorSelect<IntArg<BLAST_MODE_ARG, 0>, TrInstant,
+    ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,400>,IntArg<BLAST_SIZE_ARG,100>>,
+    ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,400>,IntArg<BLAST_SIZE_ARG,100>>,
+    ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SIZE_ARG,8000>,IntArg<BLAST_SPEED_ARG,400>>,
+    BlastL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,250>>,
+    OriginalBlastL<RgbArg<BLAST_COLOR_ARG,White>>
+  >,
+  ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>,TrWipeIn<600>,TrWipe<600>,IntArg<MELT_SIZE_ARG,14000>>,
+  InOutTrL<
+    TrSelect<IntArg<IGNITION_MODE_ARG, 0>,
+      TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,
+      TrFadeX<IntArg<IGNITION_TIME_ARG,300>>,
+      TrConcat<TrInstant, AlphaL<RgbArg<SPARK_COLOR_ARG,White>, Bump<Int<0>, IntArg<SPARK_SIZE_ARG, 2000>>>, TrWipeX<IntArg<IGNITION_TIME_ARG,300>>>
+    >,
+    TrSelect<IntArg<RETRACTION_MODE_ARG, 0>,
+      TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,
+      TrFadeX<IntArg<RETRACTION_TIME_ARG,500>>,
+      TrConcat<TrInstant, AlphaL<RgbArg<SPARK_COLOR_ARG,White>, Bump<Int<32768>, IntArg<SPARK_SIZE_ARG, 2000>>>, TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>>
+    >,
+    ColorSelect<IntArg<OFF_OPTION_ARG, 0>, TrInstant,
+      RgbArg<OFF_COLOR_ARG,Black>,
+      PulsingX<RgbArg<OFF_COLOR_ARG,Black>, Black, IntArg<RETRACTION_COOLDOWN_ARG, 1200>>,
+      RandomPerLEDFlicker<RgbArg<OFF_COLOR_ARG,Black>, Black>,
+      BlinkingX<RgbArg<OFF_COLOR_ARG,Black>, Black, IntArg<RETRACTION_COOLDOWN_ARG, 1000>, Int<500>>
+    >
+  >
 >;
 
 // ── Base Style 0: AudioFlicker ────────────────────────────────────────────────

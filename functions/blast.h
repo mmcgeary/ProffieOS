@@ -26,30 +26,39 @@ static uint8_t blast_hump[32] = {
   26,22,18,14,11,9,7,5
 };
 
-template<int FADEOUT_MS = 200,
-  int WAVE_SIZE=100,
-  int WAVE_MS=400,
+template<class FADEOUT_MS = Int<200>,
+  class WAVE_SIZE=Int<100>,
+  class WAVE_MS=Int<400>,
   BladeEffectType EFFECT = EFFECT_BLAST>
-class BlastF {
+class BlastFX {
 public:
   void run(BladeBase* blade) {
     num_leds_ = blade->num_leds();
     num_blasts_ = SaberBase::GetEffects(&effects_);
     blade_number_ = blade->GetBladeNumber();
+    fadeout_ms_.run(blade);
+    wave_size_.run(blade);
+    wave_ms_.run(blade);
   }
 
   int getInteger(int led) {
     int mix = 0;
+    int fadeout = fadeout_ms_.getInteger(led);
+    if (fadeout <= 0) fadeout = 1;
+    int wave_ms = wave_ms_.getInteger(led);
+    if (wave_ms <= 0) wave_ms = 1;
+    int wave_size = wave_size_.getInteger(led);
+
     for (size_t i = 0; i < num_blasts_; i++) {
       const BladeEffect& b = effects_[i];
       if (!(b.type == EFFECT)) continue;
       if (!b.location.on_blade(blade_number_)) continue;
       uint32_t T = micros() - b.start_micros;
-      int M = 1000 - T/FADEOUT_MS;
+      int M = 1000 - T/fadeout;
       if (M > 0) {
 	// TODO: Get rid of float math.
 	float dist = fabsf(b.location - led/(float)num_leds_);
-	int N = fabsf(dist - T / (WAVE_MS * 1000.0f)) * WAVE_SIZE;
+	int N = fabsf(dist - T / (wave_ms * 1000.0f)) * wave_size;
 	if (N <= 32) {
 	  mix += blast_hump[N] * M / 1000;
 	}
@@ -63,7 +72,16 @@ private:
   int blade_number_;
   size_t num_blasts_;
   BladeEffect* effects_;
+  PONUA FADEOUT_MS fadeout_ms_;
+  PONUA WAVE_SIZE wave_size_;
+  PONUA WAVE_MS wave_ms_;
 };
+
+template<int FADEOUT_MS = 200,
+  int WAVE_SIZE=100,
+  int WAVE_MS=400,
+  BladeEffectType EFFECT = EFFECT_BLAST>
+using BlastF = BlastFX<Int<FADEOUT_MS>, Int<WAVE_SIZE>, Int<WAVE_MS>, EFFECT>;
 
 // Usage: BlastFadeoutF<FADEOUT_MS, EFFECT>
 // FADEOUT_MS: a number (defaults to 250)

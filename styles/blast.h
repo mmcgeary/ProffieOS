@@ -43,11 +43,11 @@ class BladeBase;
 
 template<
   class BLAST,
-  int FADEOUT_MS = 200,
-  int WAVE_SIZE=100,
-  int WAVE_MS=400,
+  class FADEOUT_MS = Int<200>,
+  class WAVE_SIZE = Int<100>,
+  class WAVE_MS = Int<400>,
   BladeEffectType EFFECT = EFFECT_BLAST>
-  using BlastL = AlphaL<BLAST, BlastF<FADEOUT_MS, WAVE_SIZE, WAVE_MS, EFFECT>>;
+  using BlastL = AlphaL<BLAST, BlastFX<FADEOUT_MS, WAVE_SIZE, WAVE_MS, EFFECT>>;
 
 template<class BASE,
   class BLAST,
@@ -55,7 +55,7 @@ template<class BASE,
   int WAVE_SIZE=100,
   int WAVE_MS=400,
   BladeEffectType EFFECT = EFFECT_BLAST>
-  using Blast = Layers<BASE, BlastL<BLAST, FADEOUT_MS, WAVE_SIZE, WAVE_MS, EFFECT>>;
+  using Blast = Layers<BASE, BlastL<BLAST, Int<FADEOUT_MS>, Int<WAVE_SIZE>, Int<WAVE_MS>, EFFECT>>;
 
 
 template<class BLAST, int FADEOUT_MS = 250, BladeEffectType EFFECT = EFFECT_BLAST>

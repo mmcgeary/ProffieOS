@@ -78,16 +78,20 @@ static uint8_t clash_hump[32] = {
 template<
   class CLASH_COLOR = Rgb<255,255,255>,
   int CLASH_MILLIS = 40,
-  int CLASH_WIDTH_PERCENT = 50,
+  class CLASH_WIDTH_PERCENT = Int<50>,
   BladeEffectType EFFECT = EFFECT_CLASH>
 class LocalizedClashL {
 public:
   void run(BladeBase* blade) {
     clash_color_.run(blade);
+    clash_width_percent_.run(blade);
     // This should make us activate the clash at least one "frame".
     if (BladeEffect* e = effect_.Detect(blade)) {
       clash_ = true;
-      mult_ = NELEM(clash_hump) * 2 * 102400 / CLASH_WIDTH_PERCENT / blade->num_leds();
+      int width = clash_width_percent_.getInteger(0);
+      if (width <= 0) width = 1;
+      mult_ = NELEM(clash_hump) * 2 * 102400 / width / blade->num_leds();
+      if (mult_ <= 0) mult_ = 1;
       clash_location_ = e->location * blade->num_leds() * mult_;
   } else if (micros() - effect_.last_detected_micros() < CLASH_MILLIS * 1000) {
       clash_ = true;
@@ -101,6 +105,7 @@ private:
   int mult_;
   int clash_location_;
   PONUA CLASH_COLOR clash_color_;
+  PONUA CLASH_WIDTH_PERCENT clash_width_percent_;
 public:
   auto getColor(int led) -> decltype(clash_color_.getColor(led) * 1) {
     decltype(clash_color_.getColor(led) * 1) ret = RGBA_um_nod::Transparent();
@@ -120,6 +125,6 @@ template<class T,
   int CLASH_MILLIS = 40,
   int CLASH_WIDTH_PERCENT = 50,
   BladeEffectType EFFECT = EFFECT_CLASH>
-  using LocalizedClash = Layers<T, LocalizedClashL<CLASH_COLOR, CLASH_MILLIS, CLASH_WIDTH_PERCENT, EFFECT>>;
+  using LocalizedClash = Layers<T, LocalizedClashL<CLASH_COLOR, CLASH_MILLIS, Int<CLASH_WIDTH_PERCENT>, EFFECT>>;
 
 #endif
