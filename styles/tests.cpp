@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string.h>
+#include <assert.h>
 
 // cruft
 #define interrupts() do {} while(0)
@@ -875,6 +876,23 @@ void test_argument_parsing() {
   CHECK_COLOR(TestRgbArgColors[1], 0, 0, 1, 0);
   CHECK_COLOR(TestRgbArgColors[2], 0, 1, 0, 0);
   CHECK_COLOR(TestRgbArgColors[3], 7, 8, 9, 0);
+
+  // Test selectable layers arg parsing
+  GetMaxArgParser ap("builtin 0 1");
+  CurrentArgParser = &ap;
+  BladeStyle* style = StylePtr<IniAudioFlickerCoreBlade>()->make();
+  assert(style != nullptr);
+  assert(style->get_max_arg(CLASH_MODE_ARG) == 3);
+  assert(style->get_max_arg(BLAST_MODE_ARG) == 5);
+  assert(style->get_max_arg(LOCKUP_MODE_ARG) == 2);
+  assert(style->get_max_arg(IGNITION_MODE_ARG) == 3);
+  assert(style->get_max_arg(RETRACTION_MODE_ARG) == 3);
+  assert(style->get_max_arg(CLASH_WIDTH_ARG) == -1);
+  assert(style->get_max_arg(BLAST_SIZE_ARG) == 32768);
+  assert(style->get_max_arg(BLAST_SPEED_ARG) == -1);
+  assert(style->get_max_arg(SPARK_COLOR_ARG) == -1);
+  assert(style->get_max_arg(SPARK_SIZE_ARG) == 32768);
+  delete style;
 }
 
 void test_gradient() {
