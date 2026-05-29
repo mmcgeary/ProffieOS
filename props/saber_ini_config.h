@@ -257,10 +257,10 @@ public:
   }
 
   void FindBlade(bool announce = false) {
+    PropBase::FindBlade(announce);
     if (!ini_loaded_) {
       LoadIniConfig(false, true);
     }
-    PropBase::FindBlade(announce);
   }
 
   // When INI is loaded, populate current_preset_ directly from INI data
