@@ -198,6 +198,18 @@ static void BuildArgStyleString(const char* base_style,
       case kHeatRandArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->heat_rand);       val = slot_buf; break;
       case kFireCoolingArg:     snprintf(slot_buf, sizeof(slot_buf), "%u", blade->fire_cooling);    val = slot_buf; break;
       case kRainbowSpeedArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->rainbow_speed);   val = slot_buf; break;
+      case kMeltSizeArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->melt_size);        val = slot_buf; break;
+      case kDragSizeArg:        snprintf(slot_buf, sizeof(slot_buf), "%u", blade->drag_size);        val = slot_buf; break;
+      case kClashModeArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->clash_mode);       val = slot_buf; break;
+      case kBlastModeArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->blast_mode);       val = slot_buf; break;
+      case kLockupModeArg:      snprintf(slot_buf, sizeof(slot_buf), "%u", blade->lockup_mode);      val = slot_buf; break;
+      case kIgnitionModeArg:    snprintf(slot_buf, sizeof(slot_buf), "%u", blade->ignition_mode);    val = slot_buf; break;
+      case kRetractionModeArg:  snprintf(slot_buf, sizeof(slot_buf), "%u", blade->retraction_mode);  val = slot_buf; break;
+      case kClashWidthArg:      snprintf(slot_buf, sizeof(slot_buf), "%u", blade->clash_width);      val = slot_buf; break;
+      case kBlastSizeArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->blast_size);       val = slot_buf; break;
+      case kBlastSpeedArg:      snprintf(slot_buf, sizeof(slot_buf), "%u", blade->blast_speed);      val = slot_buf; break;
+      case kSparkColorArg:      color_idx = 12; is_color = true; break;
+      case kSparkSizeArg:       snprintf(slot_buf, sizeof(slot_buf), "%u", blade->spark_size);       val = slot_buf; break;
       default:                  break;
     }
 
