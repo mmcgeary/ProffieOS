@@ -11,9 +11,24 @@ const unsigned int maxLedsPerStrip = 144;
 #define ENABLE_SD
 #define NO_REPEAT_RANDOM
 #define INI_NUM_BLADES NUM_BLADES
+#define DYNAMIC_BLADE_LENGTH
+#define DYNAMIC_BLADE_DIMMING
+#define MOUNT_SD_SETTING
 #endif
 
 #ifdef CONFIG_PROP
+uint32_t current_idle_off_time = 600000;
+#define IDLE_OFF_TIME current_idle_off_time
+
+uint32_t current_motion_timeout = 900000;
+#define MOTION_TIMEOUT current_motion_timeout
+
+uint16_t current_short_click_timeout = 500;
+#define BUTTON_SHORT_CLICK_TIMEOUT current_short_click_timeout
+
+uint16_t current_double_click_timeout = 500;
+#define BUTTON_DOUBLE_CLICK_TIMEOUT current_double_click_timeout
+
 #include "../props/saber_ini_config.h"
 #endif
 

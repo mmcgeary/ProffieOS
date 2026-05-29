@@ -310,6 +310,11 @@ struct IniGlobalConfig {
   uint8_t clash_threshold;
   uint8_t gesture_flags;
   uint8_t num_buttons;
+  uint8_t blade_dimming;
+  uint16_t button_short_click_timeout;
+  uint16_t button_double_click_timeout;
+  uint32_t idle_off_time;
+  uint32_t motion_timeout;
   char button_profile[INI_MAX_KEY_LEN];
   int16_t blade_length[10];
 
@@ -317,6 +322,11 @@ struct IniGlobalConfig {
     volume = 1000;
     clash_threshold = 8;
     gesture_flags = 0;
+    blade_dimming = 100;
+    button_short_click_timeout = 500;
+    button_double_click_timeout = 500;
+    idle_off_time = 60 * 10 * 1000;
+    motion_timeout = 60 * 15 * 1000;
     num_buttons = ResolveRuntimeDefaultButtonCount();
     strcpy(button_profile, "default");
     for (int i = 0; i < 10; ++i) blade_length[i] = -1;

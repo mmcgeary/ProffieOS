@@ -141,6 +141,16 @@ private:
       SetGestureFlag(val, g, GESTURE_FORCE_PUSH);
     } else if (strcasecmp(key, "melt") == 0) {
       SetGestureFlag(val, g, GESTURE_MELT);
+    } else if (strcasecmp(key, "blade_dimming") == 0) {
+      g->blade_dimming = constrain(atoi(val), 0, 100);
+    } else if (strcasecmp(key, "idle_off_time") == 0) {
+      g->idle_off_time = constrain(atoi(val), 0, 86400000);
+    } else if (strcasecmp(key, "motion_timeout") == 0) {
+      g->motion_timeout = constrain(atoi(val), 0, 86400000);
+    } else if (strcasecmp(key, "button_short_click_timeout") == 0) {
+      g->button_short_click_timeout = constrain(atoi(val), 50, 2000);
+    } else if (strcasecmp(key, "button_double_click_timeout") == 0) {
+      g->button_double_click_timeout = constrain(atoi(val), 50, 2000);
     } else if (strncasecmp(key, "blade", 5) == 0 && strstr(key, "_length") != nullptr) {
       int blade_num = atoi(key + 5);
       if (blade_num >= 1 && blade_num <= 10) {

@@ -694,6 +694,15 @@ private:
     if (!config_) return;
     uint32_t vol = std::min<uint32_t>(config_->global.volume, VOLUME);
     dynamic_mixer.set_volume(vol);
+
+#ifdef DYNAMIC_BLADE_DIMMING
+    SaberBase::SetDimming((uint32_t)config_->global.blade_dimming * 16384 / 100);
+#endif
+
+    current_idle_off_time = config_->global.idle_off_time;
+    current_motion_timeout = config_->global.motion_timeout;
+    current_short_click_timeout = config_->global.button_short_click_timeout;
+    current_double_click_timeout = config_->global.button_double_click_timeout;
   }
 
   bool HandleGestureEvent(EVENT event, uint32_t modifiers) {
