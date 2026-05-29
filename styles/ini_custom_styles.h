@@ -13,14 +13,14 @@ template<class BASE>
 using IniCoreWrapper = Layers<
   BASE,
   ColorSelect<IntArg<LOCKUP_MODE_ARG, 0>, TrInstant,
-    ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<LOCKUP_FADE_ARG,100>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
+    ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<LOCKUP_FADE_ARG,100>>,Scale<BladeAngle<0,16000>,Int<4000>,Int<26000>>,Int<6000>,IntArg<LOCKUP_SIZE_ARG,12000>>,
     LockupL<RgbArg<LOCKUP_COLOR_ARG,White>>
   >,
   ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>,
   ResponsiveMeltL<Mix<TwistAngle<>,RgbArg<MELT_BASE_ARG,Red>,RgbArg<MELT_ALT_ARG,Yellow>>,TrWipeIn<600>,TrWipe<600>,IntArg<MELT_SIZE_ARG,4000>>,
   ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>,TrInstant,TrInstant,IntArg<DRAG_SIZE_ARG,2000>>,
   ColorSelect<IntArg<CLASH_MODE_ARG, 0>, TrInstant,
-    ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<CLASH_FADE_ARG,200>>,IntArg<LOCKUP_SIZE_ARG,26000>>,
+    ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFadeX<IntArg<CLASH_FADE_ARG,200>>,Scale<BladeAngle<0,16000>,Int<4000>,Int<26000>>,Int<6000>,IntArg<LOCKUP_SIZE_ARG,12000>>,
     SimpleClashL<RgbArg<CLASH_COLOR_ARG,White>, 40>,
     LocalizedClashL<RgbArg<CLASH_COLOR_ARG,White>, 40, IntArg<CLASH_WIDTH_ARG, 50>>
   >,
