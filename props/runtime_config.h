@@ -306,7 +306,7 @@ struct IniPreset {
 };
 
 struct IniGlobalConfig {
-  uint8_t volume;
+  uint16_t volume;
   uint8_t clash_threshold;
   uint8_t gesture_flags;
   uint8_t num_buttons;
@@ -314,9 +314,9 @@ struct IniGlobalConfig {
   int16_t blade_length[10];
 
   void SetDefaults() {
-    volume = 80;
+    volume = 1000;
     clash_threshold = 8;
-    gesture_flags = GESTURE_TWIST_ON | GESTURE_TWIST_OFF;
+    gesture_flags = 0;
     num_buttons = ResolveRuntimeDefaultButtonCount();
     strcpy(button_profile, "default");
     for (int i = 0; i < 10; ++i) blade_length[i] = -1;

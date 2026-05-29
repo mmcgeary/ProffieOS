@@ -692,7 +692,7 @@ private:
 
   void ApplyGlobalConfig() {
     if (!config_) return;
-    uint32_t vol = (uint32_t)config_->global.volume * VOLUME / 100;
+    uint32_t vol = std::min<uint32_t>(config_->global.volume, VOLUME);
     dynamic_mixer.set_volume(vol);
   }
 

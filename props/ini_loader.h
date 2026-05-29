@@ -119,7 +119,7 @@ private:
 
   static void ParseGlobal(const char* key, const char* val, IniGlobalConfig* g) {
     if (strcasecmp(key, "volume") == 0) {
-      g->volume = constrain(atoi(val), 0, 100);
+      g->volume = constrain(atoi(val), 0, 3000);
     } else if (strcasecmp(key, "clash_threshold") == 0) {
       g->clash_threshold = constrain(atoi(val), 1, 16);
     } else if (strcasecmp(key, "num_buttons") == 0) {
