@@ -19,7 +19,7 @@ using IniCoreWrapper = Layers<
   ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>,
   ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>,
   ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>,
-  InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>>
+  InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,RgbArg<OFF_COLOR_ARG,Black>>
 >;
 
 // ── Base Style 0: AudioFlicker ────────────────────────────────────────────────
@@ -110,6 +110,6 @@ using IniColorCycleCoreBlade = Layers<ColorCycleX<RgbArg<BASE_COLOR_ARG,Blue>,In
 
 // ── Base Style 13: Film ───────────────────────────────────────────────────────
 // BASE_COLOR: main blade colour
-using IniFilmCoreBlade = Layers<AudioFlicker<Stripes<8000,-2500,RgbArg<BASE_COLOR_ARG,Blue>,Mix<Int<16000>,Black,RgbArg<BASE_COLOR_ARG,Blue>>>,RgbArg<BASE_COLOR_ARG,Blue>>, ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFade<100>,Int<26000>>, ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>, ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>, ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>>, ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFade<200>,Int<26000>>, ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>, InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG, 300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG, 500>>>>;
+using IniFilmCoreBlade = Layers<AudioFlicker<Stripes<8000,-2500,RgbArg<BASE_COLOR_ARG,Blue>,Mix<Int<16000>,Black,RgbArg<BASE_COLOR_ARG,Blue>>>,RgbArg<BASE_COLOR_ARG,Blue>>, ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFade<100>,Int<26000>>, ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>, ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>, ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>>, ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFade<200>,Int<26000>>, ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>, InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG, 300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG, 500>>,RgbArg<OFF_COLOR_ARG,Black>>>;
 
 #endif // STYLES_INI_CUSTOM_STYLES_H

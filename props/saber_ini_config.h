@@ -350,11 +350,6 @@ public:
        stream_target_file_ = nullptr;
        STDOUT.println("SAVE_OK");
        LOCK_SD(false);
-       // Auto-reboot after 500ms to apply changes
-       // (Gives serial buffer time to clear SAVE_OK)
-       SaberBase::DoEffect(EFFECT_FORCE, 0); // Audible confirmation
-       delay(500);
-       NVIC_SystemReset();
        return true;
       }
 
@@ -380,6 +375,14 @@ public:
 
     if (!strcmp(cmd, kReadIniCmd)) {
       return HandleReadIniBank(kBladeInBankArg);
+    }
+
+    if (!strcmp(cmd, "reboot")) {
+      STDOUT.println("Rebooting...");
+      SaberBase::DoEffect(EFFECT_FORCE, 0);
+      delay(500);
+      NVIC_SystemReset();
+      return true;
     }
 
     if (!strcmp(cmd, kReadIniBankCmd)) {
