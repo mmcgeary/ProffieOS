@@ -213,6 +213,7 @@ private:
     else if (strcasecmp(key, "emitter_color") == 0) color_idx = 9;
     else if (strcasecmp(key, "preon_color") == 0) color_idx = 10;
     else if (strcasecmp(key, "off_color") == 0) color_idx = 11;
+    else if (strcasecmp(key, "spark_color") == 0) color_idx = 12;
 
     if (color_idx < 0) return false;
 
@@ -225,6 +226,31 @@ private:
     blade->colors[color_idx].b = b >> 8;
     blade->set_colors_mask |= (1 << color_idx);
     return true;
+  }
+
+  static uint8_t ParseClashMode(const char* val) {
+    if (strcasecmp(val, "simple") == 0) return 1;
+    if (strcasecmp(val, "localized") == 0) return 2;
+    return 0; // responsive
+  }
+
+  static uint8_t ParseBlastMode(const char* val) {
+    if (strcasecmp(val, "split_wave") == 0) return 1;
+    if (strcasecmp(val, "fade") == 0) return 2;
+    if (strcasecmp(val, "fadeout") == 0) return 3;
+    if (strcasecmp(val, "original") == 0) return 4;
+    return 0; // responsive
+  }
+
+  static uint8_t ParseLockupMode(const char* val) {
+    if (strcasecmp(val, "standard") == 0) return 1;
+    return 0; // responsive
+  }
+
+  static uint8_t ParseIgnitionMode(const char* val) {
+    if (strcasecmp(val, "fade") == 0) return 1;
+    if (strcasecmp(val, "spark") == 0) return 2;
+    return 0; // wipe
   }
 
   static bool ParseBladeField(const char* key, const char* val, IniBladeStyle* blade) {
@@ -304,6 +330,42 @@ private:
       return true;
     } else if (strcasecmp(key, "off_rate_ms") == 0) {
       blade->off_rate_ms = constrain(atoi(val), 10, 60000);
+      return true;
+    } else if (strcasecmp(key, "clash_mode") == 0) {
+      blade->clash_mode = ParseClashMode(val);
+      return true;
+    } else if (strcasecmp(key, "blast_mode") == 0) {
+      blade->blast_mode = ParseBlastMode(val);
+      return true;
+    } else if (strcasecmp(key, "lockup_mode") == 0) {
+      blade->lockup_mode = ParseLockupMode(val);
+      return true;
+    } else if (strcasecmp(key, "ignition_mode") == 0) {
+      blade->ignition_mode = ParseIgnitionMode(val);
+      return true;
+    } else if (strcasecmp(key, "retraction_mode") == 0) {
+      blade->retraction_mode = ParseIgnitionMode(val);
+      return true;
+    } else if (strcasecmp(key, "clash_width") == 0) {
+      blade->clash_width = constrain(atoi(val), 0, 100);
+      return true;
+    } else if (strcasecmp(key, "blast_size") == 0) {
+      blade->blast_size = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "blast_speed") == 0) {
+      blade->blast_speed = constrain(atoi(val), 10, 5000);
+      return true;
+    } else if (strcasecmp(key, "spark_size") == 0) {
+      blade->spark_size = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "drag_size") == 0) {
+      blade->drag_size = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "melt_size") == 0) {
+      blade->melt_size = constrain(atoi(val), 0, 32768);
+      return true;
+    } else if (strcasecmp(key, "stab_size") == 0) {
+      blade->stab_size = constrain(atoi(val), 0, 32768);
       return true;
     }
     return ParseColorField(key, val, blade);
