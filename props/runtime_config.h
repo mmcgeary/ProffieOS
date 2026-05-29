@@ -173,7 +173,7 @@ struct IniBladeStyle {
   struct IniColor {
     uint8_t r, g, b;
   };
-  IniColor colors[12];
+  IniColor colors[13];
   uint16_t set_colors_mask = 0;
   uint16_t ignition_time;
   uint16_t retraction_time;
@@ -197,6 +197,18 @@ struct IniBladeStyle {
   uint16_t heat_rand;
   uint16_t fire_cooling;
   uint16_t rainbow_speed;
+  uint8_t clash_mode;
+  uint8_t blast_mode;
+  uint8_t lockup_mode;
+  uint8_t ignition_mode;
+  uint8_t retraction_mode;
+  uint16_t clash_width;
+  uint16_t blast_size;
+  uint16_t blast_speed;
+  uint16_t spark_size;
+  uint16_t drag_size;
+  uint16_t melt_size;
+  uint16_t stab_size;
   NamedStyleParam named_style_params[INI_MAX_STYLE_PARAMS];
   uint8_t named_style_param_count = 0;
 
@@ -267,6 +279,20 @@ struct IniBladeStyle {
     heat_rand = 4500;
     fire_cooling = 55;
     rainbow_speed = 800;
+    colors[12] = {255, 255, 255}; // default spark_color to white
+    clash_mode = 0;      
+    blast_mode = 0;      
+    lockup_mode = 0;     
+    ignition_mode = 0;   
+    retraction_mode = 0; 
+   
+    clash_width = 50;    
+    blast_size = 100;    
+    blast_speed = 400;   
+    spark_size = 2000;   
+    drag_size = 2000;    
+    melt_size = 4000;    
+    stab_size = 14000;   
     ClearNamedStyleParams();
   }
 };
