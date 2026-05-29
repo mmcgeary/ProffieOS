@@ -638,6 +638,9 @@ private:
       next_ini_load_attempt_ms_ = 0;
       STDOUT.println("SaberIni: LOAD_OK");
       SetPreset(0, false);
+#ifdef ENABLE_AUDIO
+      SaberBase::DoBoot();
+#endif
     } else {
       if (loaded) {
         STDOUT.println("SaberIni: INI has 0 presets (fallback)");
