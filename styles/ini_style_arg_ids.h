@@ -70,9 +70,19 @@ enum ArgId : int {
   kCycleOffPctArg = 62,
   kCycleOnPctArg = 63,
   kCycleFadeArg = 64,
+  kClashModeArg = 65,
+  kBlastModeArg = 66,
+  kLockupModeArg = 67,
+  kIgnitionModeArg = 68,
+  kRetractionModeArg = 69,
+  kClashWidthArg = 70,
+  kBlastSizeArg = 71,
+  kBlastSpeedArg = 72,
+  kSparkColorArg = 73,
+  kSparkSizeArg = 74,
 
   kArgCount = kRainbowSpeedArg,
-  kExtendedArgCount = kCycleFadeArg,
+  kExtendedArgCount = kSparkSizeArg,
 };
 
 // Legacy aliases kept for compatibility with existing template code.
@@ -146,5 +156,15 @@ static constexpr int kTuningArgCount = kRainbowSpeedArg - kFlickerDepthArg + 1;
 #define CYCLE_OFF_PCT_ARG ini_style_args::kCycleOffPctArg
 #define CYCLE_ON_PCT_ARG ini_style_args::kCycleOnPctArg
 #define CYCLE_FADE_ARG ini_style_args::kCycleFadeArg
+#define CLASH_MODE_ARG ini_style_args::kClashModeArg
+#define BLAST_MODE_ARG ini_style_args::kBlastModeArg
+#define LOCKUP_MODE_ARG ini_style_args::kLockupModeArg
+#define IGNITION_MODE_ARG ini_style_args::kIgnitionModeArg
+#define RETRACTION_MODE_ARG ini_style_args::kRetractionModeArg
+#define CLASH_WIDTH_ARG ini_style_args::kClashWidthArg
+#define BLAST_SIZE_ARG ini_style_args::kBlastSizeArg
+#define BLAST_SPEED_ARG ini_style_args::kBlastSpeedArg
+#define SPARK_COLOR_ARG ini_style_args::kSparkColorArg
+#define SPARK_SIZE_ARG ini_style_args::kSparkSizeArg
 
 #endif  // STYLES_INI_STYLE_ARG_IDS_H
