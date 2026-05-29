@@ -59,11 +59,12 @@ inline void BuildHardwareProfileLine(int num_blades,
   if (!out || out_size == 0) return;
   snprintf(out,
            out_size,
-           "HW_PROFILE num_blades=%d num_buttons=%d has_blade_detect=%d blade_detect=%d",
+           "HW_PROFILE num_blades=%d num_buttons=%d has_blade_detect=%d blade_detect=%d max_volume=%d",
            NormalizeHardwareCountForProfile(num_blades),
            NormalizeHardwareCountForProfile(num_buttons),
            has_blade_detect ? 1 : 0,
-           blade_detected ? 1 : 0);
+           blade_detected ? 1 : 0,
+           VOLUME);
 }
 
 inline const char* NormalizeIniBankArg(const char* arg) {
