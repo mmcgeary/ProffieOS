@@ -7,6 +7,7 @@
 #include "color_cycle.h"
 #include "color_select.h"
 #include "random_per_led_flicker.h"
+#include "../functions/divide.h"
 
 // Core Wrapper Template (LTO will deduplicate identical instances)
 template<class BASE>
@@ -26,7 +27,7 @@ using IniCoreWrapper = Layers<
   >,
   ColorSelect<IntArg<BLAST_MODE_ARG, 0>, TrInstant,
     ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,400>,IntArg<BLAST_SIZE_ARG,100>>,
-    ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,400>,IntArg<BLAST_SIZE_ARG,100>>,
+    ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>,Int<400>,Divide<Int<1600000>,IntArg<BLAST_SIZE_ARG,2000>>,IntArg<BLAST_SPEED_ARG,400>>,
     ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SIZE_ARG,8000>,IntArg<BLAST_SPEED_ARG,400>>,
     BlastL<RgbArg<BLAST_COLOR_ARG,White>,IntArg<BLAST_SPEED_ARG,250>>,
     OriginalBlastL<RgbArg<BLAST_COLOR_ARG,White>>
