@@ -5,6 +5,8 @@
 #include "ini_style_arg_ids.h"
 #include "blinking.h"
 #include "color_cycle.h"
+#include "color_select.h"
+#include "random_per_led_flicker.h"
 
 // Core Wrapper Template (LTO will deduplicate identical instances)
 template<class BASE>
@@ -19,7 +21,7 @@ using IniCoreWrapper = Layers<
   ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>,
   ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>,
   ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>,
-  InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,RgbArg<OFF_COLOR_ARG,Black>>
+  InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG,300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG,500>>,ColorSelect<IntArg<OFF_OPTION_ARG, 0>, TrInstant, RgbArg<OFF_COLOR_ARG,Black>, PulsingX<RgbArg<OFF_COLOR_ARG,Black>, Black, IntArg<RETRACTION_COOL_DOWN_ARG, 1200>>, RandomPerLEDFlicker<RgbArg<OFF_COLOR_ARG,Black>, Black>>>
 >;
 
 // ── Base Style 0: AudioFlicker ────────────────────────────────────────────────
@@ -29,7 +31,7 @@ using IniAudioFlickerCoreBlade = IniCoreWrapper<AudioFlicker<RgbArg<BASE_COLOR_A
 
 // ── Base Style 1: HumpFlicker ─────────────────────────────────────────────────
 // HUMP_WIDTH_ARG: controls width of the wandering brightness hump (default 50)
-using IniHumpFlickerCoreBlade = IniCoreWrapper<HumpFlickerLX<RgbArg<BASE_COLOR_ARG,Magenta>,IntArg<HUMP_WIDTH_ARG,50>>>;
+using IniHumpFlickerCoreBlade = IniCoreWrapper<HumpFlickerX<RgbArg<ALT_COLOR_ARG,Black>, RgbArg<BASE_COLOR_ARG,Magenta>, IntArg<HUMP_WIDTH_ARG,50>>>;
 
 // ── Base Style 2: PulsingStripes ──────────────────────────────────────────────
 // STRIPE_WIDTH_ARG: stripe width (default 3000)
@@ -110,6 +112,6 @@ using IniColorCycleCoreBlade = Layers<ColorCycleX<RgbArg<BASE_COLOR_ARG,Blue>,In
 
 // ── Base Style 13: Film ───────────────────────────────────────────────────────
 // BASE_COLOR: main blade colour
-using IniFilmCoreBlade = Layers<AudioFlicker<Stripes<8000,-2500,RgbArg<BASE_COLOR_ARG,Blue>,Mix<Int<16000>,Black,RgbArg<BASE_COLOR_ARG,Blue>>>,RgbArg<BASE_COLOR_ARG,Blue>>, ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFade<100>,Int<26000>>, ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>, ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>, ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>>, ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFade<200>,Int<26000>>, ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>, InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG, 300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG, 500>>,RgbArg<OFF_COLOR_ARG,Black>>>;
+using IniFilmCoreBlade = Layers<AudioFlicker<Stripes<8000,-2500,RgbArg<BASE_COLOR_ARG,Blue>,Mix<Int<16000>,Black,RgbArg<BASE_COLOR_ARG,Blue>>>,RgbArg<BASE_COLOR_ARG,Blue>>, ResponsiveLockupL<RgbArg<LOCKUP_COLOR_ARG,White>,TrInstant,TrFade<100>,Int<26000>>, ResponsiveLightningBlockL<RgbArg<LB_COLOR_ARG,White>>, ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>, ResponsiveDragL<RgbArg<DRAG_COLOR_ARG,White>>, ResponsiveClashL<RgbArg<CLASH_COLOR_ARG,White>,TrInstant,TrFade<200>,Int<26000>>, ResponsiveBlastL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastWaveL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveBlastFadeL<RgbArg<BLAST_COLOR_ARG,White>>, ResponsiveStabL<RgbArg<STAB_COLOR_ARG,White>>, InOutTrL<TrWipeX<IntArg<IGNITION_TIME_ARG, 300>>,TrWipeInX<IntArg<RETRACTION_TIME_ARG, 500>>,ColorSelect<IntArg<OFF_OPTION_ARG, 0>, TrInstant, RgbArg<OFF_COLOR_ARG,Black>, PulsingX<RgbArg<OFF_COLOR_ARG,Black>, Black, IntArg<RETRACTION_COOL_DOWN_ARG, 1200>>, RandomPerLEDFlicker<RgbArg<OFF_COLOR_ARG,Black>, Black>>>>;
 
 #endif // STYLES_INI_CUSTOM_STYLES_H
