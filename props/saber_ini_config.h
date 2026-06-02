@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <cstring>
 
+void PrintQuotedValue(const char* name, const char* str);
+
 inline constexpr const char kReadIniCmd[] = "READ_INI";
 inline constexpr const char kWriteIniCmd[] = "WRITE_INI";
 inline constexpr const char kReadIniBankCmd[] = "READ_INI_BANK";
@@ -273,6 +275,8 @@ public:
   void FindBlade(bool announce = false) {
     PropBase::FindBlade(announce);
     if (!ini_loaded_) {
+      ini_retries_ = 0;
+      next_ini_load_attempt_ms_ = 0;
       LoadIniConfig(false, true);
     }
   }
@@ -300,7 +304,8 @@ public:
     
     if (config_->active_preset_index != idx) {
       LOCK_SD(true);
-      if (IniLoader::LoadPreset(INI_CONFIG_FILE, idx, &config_->active_preset)) {
+      const char* filename = (config_ == blade_out_config_) ? INI_BLADE_OUT_FILE : INI_CONFIG_FILE;
+      if (IniLoader::LoadPreset(filename, idx, &config_->active_preset)) {
         config_->active_preset_index = idx;
       } else {
         STDOUT.print("SaberIni: Failed to stream preset ");
@@ -444,6 +449,52 @@ public:
       return true;
     }
     
+    if (!strcmp(cmd, "list_presets")) {
+      if (ini_loaded_ && config_ && config_->num_presets > 0) {
+        LOCK_SD(true);
+        const char* filename = (config_ == blade_out_config_) ? INI_BLADE_OUT_FILE : INI_CONFIG_FILE;
+        IniPreset p;
+        for (int idx = 0; idx < config_->num_presets; idx++) {
+          if (IniLoader::LoadPreset(filename, idx, &p)) {
+            PrintQuotedValue("FONT", p.font);
+            PrintQuotedValue("TRACK", p.track && p.track[0] ? p.track : "");
+            
+            // Output styles
+            uint8_t style_blade_count = ResolveStyleBladeCount(config_, &p);
+            for (int blade = 0; blade < NUM_BLADES; blade++) {
+              uint8_t src = (blade < style_blade_count) ? blade : (style_blade_count - 1);
+              const IniBladeStyle* blade_style = &p.blades[src];
+              const char* style_str = blade_style->style_name;
+              char base_buf[32];
+              if (!style_str[0]) {
+                strlcpy(base_buf, "static 0,0,0", sizeof(base_buf));
+              } else if (strncmp(style_str, "builtin", 7) == 0) {
+                strlcpy(base_buf, style_str, sizeof(base_buf));
+              } else {
+                int sidx = atoi(style_str);
+                if (sidx >= 0 && style_str[0] >= '0' && style_str[0] <= '9') {
+                  snprintf(base_buf, sizeof(base_buf), "builtin %d %d", sidx, blade + 1);
+                } else {
+                  strlcpy(base_buf, style_str, sizeof(base_buf));
+                }
+              }
+              // Buffer: base + space + up to kExtendedArgCount args, each up to ~12 chars.
+              static char arg_buf[32 + ini_style_args::kExtendedArgCount * 13];
+              BuildArgStyleString(base_buf, blade_style, arg_buf, sizeof(arg_buf));
+              
+              char label_buf[16];
+              snprintf(label_buf, sizeof(label_buf), "STYLE%d", blade + 1);
+              PrintQuotedValue(label_buf, arg_buf);
+            }
+            PrintQuotedValue("NAME", p.name && p.name[0] ? p.name : "INI Preset");
+            STDOUT.println("VARIATION=0");
+          }
+        }
+        LOCK_SD(false);
+        return true;
+      }
+    }
+
     return PropBase::Parse(cmd, arg);
   }
 
@@ -652,6 +703,13 @@ private:
     if (loaded && blade_in_config_->num_presets > 0) {
       STDOUT.print("SaberIni: presets=");
       STDOUT.println(blade_in_config_->num_presets);
+      
+      // Load blade out config now that global/actions defaults are ready in blade_in_config_
+      if (blade_out_config_ && (force || !blade_out_loaded_)) {
+        LoadBladeOutConfig();
+      }
+
+      SelectActiveConfigForBladeState();
       ApplyGlobalConfig();
       ini_loaded_ = true;
       next_ini_load_attempt_ms_ = 0;
@@ -677,15 +735,13 @@ private:
     }
   }
 
-  void LoadBladeOutConfig() {
+  void LoadBladeOutConfigLocked() {
     blade_out_loaded_ = false;
     if (!blade_out_config_) return;
 
-    LOCK_SD(true);
     blade_out_config_->SetDefaults();
     ApplyButtonProfileDefaults(blade_out_config_);
     if (!LSFS::Exists(INI_BLADE_OUT_FILE)) {
-      LOCK_SD(false);
       return;
     }
     if (IniLoader::Load(INI_BLADE_OUT_FILE, blade_out_config_)) {
@@ -694,6 +750,11 @@ private:
       }
       blade_out_loaded_ = true;
     }
+  }
+
+  void LoadBladeOutConfig() {
+    LOCK_SD(true);
+    LoadBladeOutConfigLocked();
     LOCK_SD(false);
   }
 
@@ -773,8 +834,19 @@ private:
     bool blade_inserted = (event == EVENT_LATCH_ON);
     if (event != EVENT_LATCH_ON && event != EVENT_LATCH_OFF) return false;
     blade_detected_ = blade_inserted;
+    
+    if (!blade_inserted && blade_out_config_ && !blade_out_loaded_) {
+      LoadBladeOutConfig();
+    }
+
     SelectActiveConfigForBladeState();
     ApplyGlobalConfig();
+    
+    if (!ini_loaded_) {
+      ini_retries_ = 0;
+      next_ini_load_attempt_ms_ = 0;
+    }
+
     FindBladeAgain();
     SaberBase::DoBladeDetect(blade_inserted);
     return true;
