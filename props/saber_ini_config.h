@@ -281,7 +281,7 @@ public:
     }
   }
 
-  int GetBladeLength(int blade) {
+  int GetBladeLength(int blade) override {
     RuntimeConfig* active_cfg = blade_in_config_ ? blade_in_config_ : config_;
     if (active_cfg && blade >= 1 && blade <= 10) {
       int len = active_cfg->global.blade_length[blade - 1];
@@ -290,7 +290,7 @@ public:
     return PropBase::GetBladeLength(blade);
   }
 
-  void SetBladeLength(int blade, int len) {
+  void SetBladeLength(int blade, int len) override {
     RuntimeConfig* active_cfg = blade_in_config_ ? blade_in_config_ : config_;
     if (active_cfg && blade >= 1 && blade <= 10) {
       active_cfg->global.blade_length[blade - 1] = len;
@@ -451,11 +451,22 @@ public:
       BuildHardwareProfileLine(
           num_blades, num_buttons, has_blade_detect, blade_detected, max_vol, profile_line, sizeof(profile_line));
       
-      if (current_config) {
+      BladeConfig* hw_cfg = nullptr;
+      for (size_t i = 0; i < NELEM(blades); i++) {
+        if (blades[i].ohm != NO_BLADE) {
+          hw_cfg = &blades[i];
+          break;
+        }
+      }
+      if (!hw_cfg && NELEM(blades) > 0) {
+        hw_cfg = &blades[0];
+      }
+
+      if (hw_cfg) {
 #define APPEND_BLADE_LENGTH(N) \
-        if (current_config->blade##N) { \
+        if (hw_cfg->blade##N) { \
           int l = this->GetBladeLength(N); \
-          if (l == -1) l = current_config->blade##N->num_leds(); \
+          if (l == -1) l = hw_cfg->blade##N->num_leds(); \
           snprintf(profile_line + strlen(profile_line), sizeof(profile_line) - strlen(profile_line), " blade%d_length=%d", N, l); \
         }
         ONCEPERBLADE(APPEND_BLADE_LENGTH);

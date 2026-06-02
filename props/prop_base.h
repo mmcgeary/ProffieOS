@@ -708,7 +708,7 @@ public:
   }
 
   // If this returns -1 use GetMaxBladeLength()
-  int GetBladeLength(int blade) {
+  virtual int GetBladeLength(int blade) {
 #ifdef DYNAMIC_BLADE_LENGTH
 #define GET_SINGLE_BLADE_LENGTH(N) if (blade == N) return savestate_.blade##N##len;
     ONCEPERBLADE(GET_SINGLE_BLADE_LENGTH)
@@ -717,7 +717,7 @@ public:
   }
 
   // You'll need to reload the styles for this to take effect.
-  void SetBladeLength(int blade, int len) {
+  virtual void SetBladeLength(int blade, int len) {
 #ifdef DYNAMIC_BLADE_LENGTH
 #define SET_SINGLE_BLADE_LENGTH(N) if (blade == N) savestate_.blade##N##len = len;
     ONCEPERBLADE(SET_SINGLE_BLADE_LENGTH)
