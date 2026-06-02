@@ -281,6 +281,23 @@ public:
     }
   }
 
+  int GetBladeLength(int blade) {
+    RuntimeConfig* active_cfg = blade_in_config_ ? blade_in_config_ : config_;
+    if (active_cfg && blade >= 1 && blade <= 10) {
+      int len = active_cfg->global.blade_length[blade - 1];
+      if (len > 0) return len;
+    }
+    return PropBase::GetBladeLength(blade);
+  }
+
+  void SetBladeLength(int blade, int len) {
+    RuntimeConfig* active_cfg = blade_in_config_ ? blade_in_config_ : config_;
+    if (active_cfg && blade >= 1 && blade <= 10) {
+      active_cfg->global.blade_length[blade - 1] = len;
+    }
+    PropBase::SetBladeLength(blade, len);
+  }
+
   // When INI is loaded, populate current_preset_ directly from INI data
   // without reading or writing presets.ini. This keeps presets.ini as
   // stock ProffieOS expects it (builtin references to config.h presets).
