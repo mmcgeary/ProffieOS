@@ -333,9 +333,9 @@ public:
     const IniPreset* p = &config_->active_preset;
 
     current_preset_.preset_num = idx;
-    current_preset_.font = p->font;
-    current_preset_.track = (p->track && p->track[0]) ? p->track : "";
-    current_preset_.name = (p->name && p->name[0]) ? p->name : "INI Preset";
+    current_preset_.font = mkstr(p->font);
+    current_preset_.track = mkstr((p->track && p->track[0]) ? p->track : "");
+    current_preset_.name = mkstr((p->name && p->name[0]) ? p->name : "INI Preset");
     current_preset_.variation = 0;
 
     uint8_t style_blade_count = ResolveStyleBladeCount(config_, p);

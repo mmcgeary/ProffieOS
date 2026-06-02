@@ -346,12 +346,12 @@ struct IniGlobalConfig {
   int16_t blade_length[10];
 
   void SetDefaults() {
-#ifdef VOLUME
-    max_volume = VOLUME;
-#else
     max_volume = 3000;
-#endif
+#ifdef VOLUME
+    volume = VOLUME;
+#else
     volume = 1000;
+#endif
     clash_threshold = 8;
     gesture_flags = 0;
     blade_dimming = 100;
