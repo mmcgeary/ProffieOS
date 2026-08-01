@@ -17,7 +17,9 @@ public:
     ORIENTATION_FETS_TOWARDS_BLADE = 0x00,
     ORIENTATION_USB_TOWARDS_BLADE = 0x10,
     ORIENTATION_SDA_TOWARDS_BLADE = 0x02,
+    ORIENTATION_USB_CCW_FROM_BLADE = 0x02,
     ORIENTATION_SERIAL_TOWARDS_BLADE = 0x12,
+    ORIENTATION_USB_CW_FROM_BLADE = 0x12,
     ORIENTATION_TOP_TOWARDS_BLADE = 0x04,
     ORIENTATION_BOTTOM_TOWARDS_BLADE = 0x14,
   };
@@ -49,6 +51,9 @@ public:
   }
   Vec3 operator*(float f) const {
     return Vec3(x * f, y * f, z * f);
+  }
+  Vec3 operator*(const Vec3& o) const {
+    return Vec3(x * o.x, y * o.y, z * o.z);
   }
   Vec3 operator*=(float f) {
     x*=f;

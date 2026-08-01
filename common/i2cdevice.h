@@ -13,14 +13,16 @@ class I2CDevice {
 public:
   explicit I2CDevice(uint8_t address) : address_(address) {}
   virtual void RunLocked() {}
+  virtual void Dump() {}
   I2CDevice *next = nullptr;
 
-  bool I2CLock() {
+  bool I2CLock(bool recapture = false) {
     if (!i2cbus.inited()) return false;
     noInterrupts();
     if (current_i2c_device) {
+      bool ret = recapture && current_i2c_device == this;
       interrupts();
-      return false;
+      return ret;
     }
     current_i2c_device = this;
     last_i2c_device = this;
@@ -172,10 +174,13 @@ public:
       if (!stm32l4_i2c_reset(Wire._i2c)) break;
       delay(1);
     }
+    Wire._i2c->state = I2C_STATE_READY;
     if (i == 10) {
-      Wire._i2c->state = I2C_STATE_READY;
       stm32l4_i2c_reset(Wire._i2c);
     }
+    Wire.end();
+    delay(1);
+    Wire.begin();
     state_machine_.reset_state_machine();
   }
   bool i2c_read_bytes_async(uint8_t reg, uint8_t* data, size_t bytes) {
@@ -236,8 +241,11 @@ void DumpI2CDevice(const char* desc, I2CDevice *device) {
   STDOUT << desc << ": " << (long)device
 	 << " id= " << (device ? device->address_ : 0)
 	 << " next= " << (long)(device ? device->next : 0) << "\n";
+  if (device) device->Dump();
 }
+
 void DumpI2CState() {
+  i2cbus.dump();
   DumpI2CDevice("current", current_i2c_device);
   DumpI2CDevice("last", last_i2c_device);
 }

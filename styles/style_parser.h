@@ -4,6 +4,7 @@
 #include "../common/preset.h"
 #include "../common/arg_parser.h"
 #include "../functions/int_arg.h"
+#include "ini_custom_styles.h"
 
 class NamedStyle {
 public:
@@ -17,17 +18,17 @@ public:
   BladeStyle* make() override {
 #if NUM_BLADES == 0
     return nullptr;
-#else    
+#else
     // Technically we should call run on these.
     IntArg<1, 0> preset_arg;
     IntArg<2, 1> style_arg;
     int preset = preset_arg.getInteger(0);
     int style = style_arg.getInteger(0);
-    
+
     StyleAllocator allocator = nullptr;
     if (preset < 0 || preset >= (int)(current_config->num_presets))
       return nullptr;
-    
+
     Preset* p = current_config->presets + preset;
 #define GET_PRESET_STYLE(N) if (style == N) allocator = p->style_allocator##N;
     ONCEPERBLADE(GET_PRESET_STYLE);
@@ -36,13 +37,26 @@ public:
     // ArgParser ap(SkipWord(CurrentArgParser->GetArg(2, "", "")));
     // CurrentArgParser = &ap;
     return allocator->make();
-#endif    
+#endif
   }
 };
 
 BuiltinPresetAllocator builtin_preset_allocator;
 
 NamedStyle named_styles[] = {
+#ifndef DISABLE_BASIC_PARSER_STYLES
+  { "audio_flicker", StylePtr<IniAudioFlickerCoreBlade>(), "Audio Flicker" },
+  { "hump_flicker", StylePtr<IniHumpFlickerCoreBlade>(), "Hump Flicker" },
+  { "pulsing_stripes", StylePtr<IniPulsingStripesCoreBlade>(), "Pulsing Stripes" },
+  { "energy", StylePtr<IniEnergyCoreBlade>(), "Energy" },
+  { "fire_unstable", StylePtr<IniFireUnstableCoreBlade>(), "Fire Unstable" },
+  { "plasma_blade", StylePtr<IniPlasmaCoreBlade>(), "Plasma Blade" },
+  { "rainbow_blade", StylePtr<IniRainbowCoreBlade>(), "Rainbow" },
+  { "energy_blade", StylePtr<IniEnergyBladeCoreBlade>(), "Energy Blade" },
+  { "lava_blade", StylePtr<IniLavaCoreBlade>(), "Lava Blade" },
+  { "sparkle_blade", StylePtr<IniSparkleCoreBlade>(), "Sparkle Blade" },
+  { "fire_blade", StylePtr<IniFireCoreBlade>(), "Fire Blade" },
+  { "film_blade", StylePtr<IniFilmCoreBlade>(), "Film Blade" },
   { "standard", StyleNormalPtrX<RgbArg<1, CYAN>, RgbArg<2, WHITE>, IntArg<3, 300>, IntArg<4, 800>>(),
     "Standard blade, color, clash color, extension time, retraction time",
   },
@@ -85,20 +99,68 @@ NamedStyle named_styles[] = {
     "Stroboscope, standby color, flash color, flash frequency, flash milliseconds, extension time, retraction time"
   },
   { "cycle",
-    StylePtr<ColorCycle<RgbArg<1, Blue>,0,1,Layers<
-        AudioFlicker<RgbArg<3, Cyan>, RgbArg<2, Blue>>,
-        BlastL<RgbArg<4, Rgb<255,50,50>>>,
-        LockupL<HumpFlicker<RgbArg<5, Red>, RgbArg<3, Cyan>,100>>,
-        SimpleClashL<White>>,
-      100,2000,1000>>(),
-    "Cycle blade, start color, base color, flicker color, blast color, lockup color"
+    StylePtr<ColorCycleX<RgbArg<1, Blue>, IntArg<3, 25>, IntArg<4, 100>, RgbArg<2, Cyan>, IntArg<33, 100>, IntArg<34, 3000>, IntArg<35, 5000>>>(),
+    "Cycle blade, off color, on color, off percent, off rpm, on percent, on rpm, fade time"
+  },
+  { "pulse",
+    StylePtr<Layers<
+      PulsingX<RgbArg<2, Cyan>, Black, IntArg<33, 1000>>,
+      InOutTrL<TrFadeX<IntArg<35, 1000>>, TrFadeX<IntArg<35, 1000>>, 
+               PulsingX<RgbArg<1, Blue>, Black, IntArg<3, 3000>>>
+    >>(),
+    "Pulse accent, off color, on color, off speed, unused, on speed, unused, fade time"
+  },
+  { "blink",
+    StylePtr<Layers<
+      BlinkingX<RgbArg<2, Cyan>, Black, IntArg<33, 1000>, IntArg<34, 500>>,
+      InOutTrL<TrFadeX<IntArg<35, 1000>>, TrFadeX<IntArg<35, 1000>>, 
+               BlinkingX<RgbArg<1, Blue>, Black, IntArg<3, 3000>, IntArg<4, 500>>>
+    >>(),
+    "Blink accent, off color, on color, off speed, off depth, on speed, on depth, fade time"
+  },
+  { "randomblink",
+    StylePtr<Layers<
+      RandomBlinkX<IntArg<33, 1000>, RgbArg<2, Cyan>, Black>,
+      InOutTrL<TrFadeX<IntArg<35, 1000>>, TrFadeX<IntArg<35, 1000>>, 
+               RandomBlinkX<IntArg<3, 3000>, RgbArg<1, Blue>, Black>>
+    >>(),
+    "Random blink accent, off color, on color, off speed, unused, on speed, unused, fade time"
+  },
+  { "film",
+    StylePtr<Layers<
+      AudioFlicker<Stripes<8000,-2500,RgbArg<1,Blue>,Mix<Int<16000>,Black,RgbArg<1,Blue>>>,RgbArg<1,Blue>>,
+      ResponsiveLockupL<RgbArg<7,White>,TrInstant,TrFade<100>,Int<26000>>,
+      ResponsiveLightningBlockL<RgbArg<8,White>>,
+      ResponsiveMeltL<Mix<TwistAngle<>,Red,Yellow>>,
+      ResponsiveDragL<RgbArg<9,White>>,
+      ResponsiveClashL<RgbArg<6,White>,TrInstant,TrFade<200>,Int<26000>>,
+      ResponsiveBlastL<RgbArg<5,White>>,
+      ResponsiveBlastWaveL<RgbArg<5,White>>,
+      ResponsiveBlastFadeL<RgbArg<5,White>>,
+      ResponsiveStabL<RgbArg<10,White>>,
+      InOutTrL<TrWipeX<IntArg<12, 300>>,TrWipeInX<IntArg<13, 500>>>
+    >>(),
+    "Film style, base color, lockup, lb, drag, clash, blast, stab, ignition time, retraction time"
   },
   { "rainbow", StyleRainbowPtrX<IntArg<1, 300>, IntArg<2, 800>>(),
     "Rainbow blade, extension time, retraction time"
   },
   { "charging", &style_charging, "Charging style" },
+#endif
   { "builtin", &builtin_preset_allocator,
-    "builtin preset styles, preset num, style index"
+    // TODO: Support multiple argument templates.
+    "builtin preset styles, "
+    "preset number, blade number, "
+    "base color, alt color, style option, "
+    "ignition option, ignition time, ignition delay, ignition color, ignition power up, "
+    "blast color, clash color, lockup color, lockup position, drag color, drag size, lb color, "
+    "stab color, melt size, swing color, swing option, emitter color, emitter size, "
+    "preon color, preon option, preon size, "
+    "retraction option, retraction time, retraction delay, retraction color, retract cooldown, "
+    "postoff color, off color, off option, "
+    "2nd alt color, 3rd alt color, "
+    "2nd style option, 3rd alt option, "
+    "ignition bend option, retraction bend option"
   },
 };
 
@@ -109,10 +171,9 @@ public:
     if (!name) return nullptr;
     for (size_t i = 0; i < NELEM(named_styles); i++) {
       if (FirstWord(name, named_styles[i].name)) {
-	return named_styles + i;
+        return named_styles + i;
       }
     }
-
     return nullptr;
   }
 
@@ -124,7 +185,7 @@ public:
     return style->style_allocator->make();
   }
 
-  // Returns true if the listed style refereces the specified argument.
+  // Returns true if the listed style references the specified argument.
   bool UsesArgument(const char* str, int argument) {
     NamedStyle* style = FindStyle(str);
     if (!style) return false;
@@ -136,14 +197,86 @@ public:
     return ap.next();
   }
 
-  // Returns true if the listed style refereces the specified argument.
+  bool GetBuiltinPos(const char* str, int* preset, int* blade) {
+    *preset = -1;
+    *blade = -1;
+    if (!FirstWord(str, "builtin")) return false;
+    ArgParser ap(SkipWord(str));
+    *preset = strtol(ap.GetArg(1, "", ""), nullptr, 10);
+    *blade = strtol(ap.GetArg(2, "", ""), nullptr, 10);
+    return *preset >= 0 && *blade >= 1;
+  }
+
+  // Returns the maximum argument used.
   int MaxUsedArgument(const char* str) {
     NamedStyle* style = FindStyle(str);
     if (!style) return false;
-    GetMaxArgParser ap;
+    GetMaxArgParser ap(SkipWord(str));
     CurrentArgParser = &ap;
     delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.max_arg() <= 2) return 0;
     return ap.max_arg();
+  }
+
+  // Returns the number of used arguments.
+  int UsedArguments(const char* str) {
+    NamedStyle* style = FindStyle(str);
+    if (!style) return false;
+    GetUsedArgsParser ap(SkipWord(str));
+    CurrentArgParser = &ap;
+    delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.used() <= 2) return 0;
+    return ap.used();
+  }
+
+  // Returns the next used argument.
+  int NextUsedArguments(const char* str, int arg) {
+    NamedStyle* style = FindStyle(str);
+    if (!style) return false;
+    GetUsedArgsParser ap(SkipWord(str));
+    CurrentArgParser = &ap;
+    delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.used() <= 2) return 0;
+    return ap.next(arg);
+  }
+
+  // Returns the previous used argument.
+  int PrevUsedArguments(const char* str, int arg) {
+    NamedStyle* style = FindStyle(str);
+    if (!style) return false;
+    GetUsedArgsParser ap(SkipWord(str));
+    CurrentArgParser = &ap;
+    delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.used() <= 2) return 0;
+    return ap.prev(arg);
+  }
+
+  // Returns Nth used argument.
+  int GetNthUsedArguments(const char* str, int arg) {
+    NamedStyle* style = FindStyle(str);
+    if (!style) return false;
+    GetUsedArgsParser ap(SkipWord(str));
+    CurrentArgParser = &ap;
+    delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.used() <= 2) return 0;
+    return ap.nth(arg);
+  }
+
+  // Returns the ArgInfo for this style.
+  ArgInfo GetArgInfo(const char* str) {
+    NamedStyle* style = FindStyle(str);
+    if (!style) return ArgInfo();
+    GetUsedArgsParser ap(SkipWord(str));
+    CurrentArgParser = &ap;
+    delete style->style_allocator->make();
+    // Ignore the two "builtin" arguments
+    if (FirstWord(str, "builtin") && ap.used() <= 2) return ArgInfo();
+    return ap.getArgInfo();
   }
 
   // Get the Nth argument of a style string.
@@ -188,14 +321,14 @@ public:
     for (int i = 0; i < output_args; i++) {
       if (i) strcat(tmp++, " ");
       if (i == argument) {
-	strcat(tmp, new_value);
-	tmp += strlen(tmp);
+        strcat(tmp, new_value);
+        tmp += strlen(tmp);
       } else {
-	if (!GetArgument(str, i, tmp)) {
-	  strcat(tmp, "~");
-	}
-//	fprintf(stderr, "OUTPUT: %s\n", tmp);
-	tmp += strlen(tmp);
+        if (!GetArgument(str, i, tmp)) {
+          strcat(tmp, "~");
+        }
+//      fprintf(stderr, "OUTPUT: %s\n", tmp);
+        tmp += strlen(tmp);
       }
     }
     *tmp = 0;
@@ -246,19 +379,22 @@ public:
       parts[0]= StyleIdentifierLength(str);
       const char* tmp = str + parts[0];
       for (int i = 0; i < n; i++) {
-	tmp = SkipWord(tmp);
+        tmp = SkipWord(tmp);
       }
       parts[1] = tmp - str;
       parts[2] = strlen(str);
     }
+
     int partlen(int part) {
       if (part == 0) return parts[0];
       return parts[part] - parts[part - 1];
     }
+
     const char* partptr(int part) {
       if (part == 0) return str;
       return str + parts[part - 1];
     }
+
     void AppendPart(int part, char** to) {
       int l = partlen(part);
       memcpy(*to, partptr(part), l);
@@ -283,34 +419,146 @@ public:
     return LSPtr<char>(ret);
   }
 
+  struct ArgumentIterator {
+    const char* start;
+    const char* end;
+    ArgumentIterator(const char* str_) : start(str_) {
+      end = str_ + StyleIdentifierLength(str_);
+    }
+
+    void next() {
+      start = end;
+      end = SkipWord(end);
+    }
+
+    operator bool() const { return end > start; }
+    bool contains(char c) { return StringPiece(start, end).contains(c); }
+
+    int len() const {
+      if (end == start) return 2;
+      return end - start;
+    }
+
+    void append(char** to) const {
+      int l = len();
+      memcpy(*to, end == start ? " ~" : start, l);
+      (*to) += l;
+      **to = 0;
+    }
+  };
+
+  static bool keep(int arg, const int* arguments_to_keep, size_t arguments_to_keep_len) {
+    if (arg == 0) return true;
+    for (size_t x = 0; x < arguments_to_keep_len; x++)
+      if (arguments_to_keep[x] == arg)
+        return true;
+    return false;
+  }
+
+  // Takes the style identifier "builtin X Y" from |to| and the
+  // arguments from |from| and puts them together into one string.
+  // Arguments listed in |arguments_to_keep| are also taken from the |from| string.
+  LSPtr<char> CopyArguments(const char* from, const char* to, const int* arguments_to_keep, size_t arguments_to_keep_len) {
+    int len = 0;
+    {
+      ArgumentIterator FROM(from);
+      ArgumentIterator TO(to);
+      for (int arg = 0; FROM || TO; arg++, FROM.next(), TO.next()) {
+        if (keep(arg, arguments_to_keep, arguments_to_keep_len)) {
+          len += TO.len();
+        } else {
+          len += FROM.len();
+        }
+      }
+    }
+    char* ret = (char*) malloc(len + 1);
+    if (ret) {
+      char* tmp = ret;
+      ArgumentIterator FROM(from);
+      ArgumentIterator TO(to);
+      for (int arg = 0; FROM || TO; arg++, FROM.next(), TO.next()) {
+        if (keep(arg, arguments_to_keep, arguments_to_keep_len)) {
+          TO.append(&tmp);
+        } else {
+          FROM.append(&tmp);
+        }
+      }
+    }
+    // STDOUT << "CopyArguments(from=" << from << " to=" << to << ") = " << ret << "\n";
+#if defined(DEBUG)
+    if (strlen(ret) != len) {
+      STDOUT << "FATAL ERROR IN COPYARGUMENTS: len = " << len << " strlen = " << strlen(ret) << "\n";
+    }
+#endif
+    return LSPtr<char>(ret);
+  }
+
+  // Takes the style identifier "builtin X Y" and all numeric arguments from |to|
+  // and all color arguments from |from| and puts them together into one string.
+  LSPtr<char> CopyColorArguments(const char* from, const char* to) {
+    int len = 0;
+    {
+      ArgumentIterator FROM(from);
+      ArgumentIterator TO(to);
+      for (int arg = 0; FROM || TO; arg++, FROM.next(), TO.next()) {
+        if (FROM.contains(',') || TO.contains(',')) {
+          len += FROM.len();
+        } else {
+          len += TO.len();
+        }
+      }
+    }
+    char* ret = (char*) malloc(len + 1);
+    if (ret) {
+      char* tmp = ret;
+      ArgumentIterator FROM(from);
+      ArgumentIterator TO(to);
+      for (int arg = 0; FROM || TO; arg++, FROM.next(), TO.next()) {
+        if (FROM.contains(',') || TO.contains(',')) {
+          FROM.append(&tmp);
+        } else {
+          TO.append(&tmp);
+        }
+      }
+    }
+    // STDOUT << "CopyArguments(from=" << from << " to=" << to << ") = " << ret << "\n";
+#if defined(DEBUG)
+    if (strlen(ret) != len) {
+      STDOUT << "FATAL ERROR IN COPYCOLORARGUMENTS: len = " << len << " strlen = " << strlen(ret) << "\n";
+    }
+#endif
+    return LSPtr<char>(ret);
+  }
+
   bool Parse(const char *cmd, const char* arg) override {
     if (!strcmp(cmd, "list_named_styles")) {
       // Just print one per line.
-      for (size_t i = 0; i < NELEM(named_styles); i++) {
-	STDOUT.println(named_styles[i].name);
+      // Skip the last one (builtin)
+      for (size_t i = 0; i < NELEM(named_styles) - 1; i++) {
+        STDOUT.println(named_styles[i].name);
+      }
+      for (size_t i = 0; i < current_config->num_presets; i++) {
+        for (size_t j = 1; j <= NUM_BLADES; j++) {
+          STDOUT << "builtin " << i << " " << j << "\n";
+        }
       }
       return true;
     }
 
     if (!strcmp("describe_named_style", cmd)) {
       if (NamedStyle* style = FindStyle(arg)) {
-	STDOUT.println(style->description);
-	ArgParserPrinter arg_parser_printer;
-	CurrentArgParser = &arg_parser_printer;
-	do {
-	  BladeStyle* tmp = style->style_allocator->make();
-	  delete tmp;
-	} while (arg_parser_printer.next());
+        STDOUT.println(style->description);
+        ArgParserPrinter arg_parser_printer(SkipWord(arg));
+        CurrentArgParser = &arg_parser_printer;
+        do {
+          BladeStyle* tmp = style->style_allocator->make();
+          delete tmp;
+        } while (arg_parser_printer.next());
       }
       return true;
     }
 
     return false;
-  }
-
-  void Help() override {
-    STDOUT.println(" list_named_styles - List all available named styles");
-    STDOUT.println(" describe_named_style <style> - show what arguments a style requires");
   }
 };
 

@@ -19,4 +19,9 @@ template<class B, int HUMP_WIDTH>
 template<class A, class B, int HUMP_WIDTH>
   using HumpFlicker = Layers<A, HumpFlickerL<B, HUMP_WIDTH>>;
 
+template<class B, class HUMP_WIDTH_FUNC>
+  using HumpFlickerLX = AlphaL<B, HumpFlickerFX<HUMP_WIDTH_FUNC>>;
+template<class A, class B, class HUMP_WIDTH_FUNC>
+  using HumpFlickerX = Layers<A, HumpFlickerLX<B, HUMP_WIDTH_FUNC>>;
+
 #endif

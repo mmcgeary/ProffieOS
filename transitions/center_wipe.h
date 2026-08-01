@@ -6,7 +6,7 @@
 #include "../functions/sum.h"
 
 // Usage: TrCenterWipeX<POSITION_FUNCTION, MILLIS_FUNCTION>
-// or: TrCenterWipeX<POSITION, MILLIS>
+// or: TrCenterWipe<POSITION, MILLIS>
 // POSITION_FUNCTION & MILLIS_FUNCTION: FUNCTION
 // POSITION: Int
 // MILLIS: a number
@@ -14,13 +14,14 @@
 // In the beginning entire blade is color A, then color B 
 // starts at the POSTION and extends up and down the blade
 // in the specified number of milliseconds.
+
 template<class MILLIS, class POSITION = Int<16384>>
 class TrCenterWipeX : public TransitionBaseX<MILLIS> {
 public:
   void run(BladeBase* blade) {
     pos_.run(blade);
     TransitionBaseX<MILLIS>::run(blade);
-    uint32_t center = (pos_.getInteger(0) * blade->num_leds()) >> 7;
+    uint32_t center = (pos_.calculate(blade) * blade->num_leds()) >> 7;
     uint32_t fade_top = this->update(256 * blade->num_leds() - center);
     uint32_t fade_bottom = this->update(center);
     uint32_t top = clampi32(center + fade_top, center, 256 * blade->num_leds());
@@ -34,7 +35,7 @@ public:
     return MixColors(a, b, mix, 8);
   }
 private:
-  POSITION pos_;
+  PONUA SVFWrapper<POSITION> pos_;
   Range range_;
 };
 
@@ -43,7 +44,7 @@ template<class COLOR, class MILLIS, class POSITION = Int<16384>> using TrCenterW
 template<class COLOR, int MILLIS, int POSITION = 16384> using TrCenterWipeSpark = TrJoin<TrCenterWipeX<Int<MILLIS>, Int<POSITION>>,TrWaveX<COLOR, Sum<Int<MILLIS>, Int<MILLIS>, Int<MILLIS>, Int<MILLIS>>, Int<200>, Sum<Int<MILLIS>, Int<MILLIS>>, Int<POSITION>>>;
 
 // Usage: TrCenterWipeInX<POSITION_FUNCTION, MILLIS_FUNCTION>
-// or: TrCenterWipeInX<POSITION, MILLIS>
+// or: TrCenterWipeIn<POSITION, MILLIS>
 // POSITION_FUNCTION & MILLIS_FUNCTION: FUNCTION
 // POSITION: Int
 // MILLIS: a number
@@ -51,13 +52,14 @@ template<class COLOR, int MILLIS, int POSITION = 16384> using TrCenterWipeSpark 
 // In the beginning entire blade is color A, then color B 
 // starts at the ends and moves toward POSITION
 // in the specified number of milliseconds.
+
 template<class MILLIS, class POSITION = Int<16384>>
 class TrCenterWipeInX : public TransitionBaseX<MILLIS> {
 public:
   void run(BladeBase* blade) {
     pos_.run(blade);
     TransitionBaseX<MILLIS>::run(blade);
-    uint32_t center = (pos_.getInteger(0) * blade->num_leds()) >> 7;
+    uint32_t center = (pos_.calculate(blade) * blade->num_leds()) >> 7;
     uint32_t fade_top = this->update(256 * blade->num_leds() - center);
     uint32_t fade_bottom = this->update(center);
     uint32_t top = clampi32((256 * blade->num_leds()) - fade_top, center, 256 * blade->num_leds());
@@ -71,7 +73,7 @@ public:
     return MixColors(b, a, mix, 8);
   }
 private:
-  POSITION pos_;
+  PONUA SVFWrapper<POSITION> pos_;
   Range range_;
 };
 

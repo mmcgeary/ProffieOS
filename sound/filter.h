@@ -1,4 +1,5 @@
 #ifndef SOUND_FILTER_H
+#define SOUND_FILTER_H
 #include <complex>
 
 namespace Filter {
@@ -7,6 +8,39 @@ namespace Filter {
 #define FILTER_ORDER 8
 #endif
 
+constexpr double PO_fac(long x) {
+  return x <= 1 ? 1.0 : PO_fac(x -1) * x;
+}
+
+// x * y^p
+constexpr double PO_pow(double x, double y, long p) {
+  return p == 0 ? x : (p & 1) ? PO_pow(x*y, y, p - 1) : PO_pow(x, y * y, p/2);
+}
+
+constexpr double PO_trig(double x, long iter) {
+  return iter > 30 ? 0.0 : PO_pow(1.0, x, iter) / PO_fac(iter) - PO_trig(x, iter + 2);
+}
+
+constexpr double PO_cos(double x) {
+  return 1.0 - PO_trig(x, 2);
+}
+
+constexpr double PO_sin(double x) {
+  return x - PO_trig(x, 3);
+}
+
+constexpr double PO_tan(double x) {
+  return PO_sin(x) / PO_cos(x);
+}
+
+constexpr double PO_sqrt_helper(double x, double lo, double hi, double mid, long iter) {
+  return iter <= 0 ? mid :
+    mid * mid > x ? PO_sqrt_helper(x, lo, mid, (lo+mid) / 2, iter-1) : PO_sqrt_helper(x, mid, hi, (mid+hi) / 2, iter - 1);
+}
+constexpr double PO_sqrt(double x) {
+  return PO_sqrt_helper(x, 0.0, x, x / 2, 64);
+}
+    
 struct C {
   constexpr C(double real = 0.0, double imag = 0.0) : real_(real), imag_(imag) {}
   constexpr C operator+(C other) { return C(real_ + other.real_, imag_ + other.imag_); }
@@ -21,6 +55,7 @@ struct C {
   }
   constexpr double real() const { return real_; }
   constexpr double imag() const { return imag_; }
+  constexpr double abs() const { return PO_sqrt(len2()); }
 private:
   constexpr double len2() const { return real_*real_ + imag_*imag_; }
   double real_;
@@ -37,8 +72,8 @@ struct ButterWorthProtoType {
     return (2 * k + 1) * M_PI / (2 * order);
   }
   
-  static constexpr double real(size_t k) { return -sin(theta(k)); }
-  static constexpr double imag(size_t k) { return cos(theta(k)); }
+  static constexpr double real(size_t k) { return -PO_sin(theta(k)); }
+  static constexpr double imag(size_t k) { return PO_cos(theta(k)); }
   
   static constexpr C pole(size_t k) {
     return (k & 1) ?
@@ -48,6 +83,7 @@ struct ButterWorthProtoType {
   static constexpr C zero(size_t k) {
     return C(0.0, 0.0);
   }
+  static constexpr double gain() { return 1.0; }
 };
 
 
@@ -55,9 +91,10 @@ template<class T, int cutoff_frequency, int sampling_frequency>
 struct ConvertToHighPass {
   static const size_t poles = T::poles;
   static const size_t zeroes = T::poles;
-  static constexpr double f() { return 2 * tan(M_PI * cutoff_frequency / sampling_frequency); }
+  static constexpr double f() { return 2 * PO_tan(M_PI * cutoff_frequency / sampling_frequency); }
   static constexpr C pole(size_t k) { return C(f()) / T::pole(k); }
   static constexpr C zero(size_t k) { return C(0.0, 0.0); }
+  static constexpr double gain() { return T::gain(); }
 };
 
 
@@ -68,6 +105,22 @@ struct BLT {
   static constexpr C blt(C s) { return (C(2) + s) / (C(2) - s); }
   static constexpr C pole(size_t k) { return blt(T::pole(k)); }
   static constexpr C zero(size_t k) { return blt(T::zero(k)); }
+
+  static constexpr double gain_from_pole(size_t k) {
+    return (C(2) - T::pole(k)).abs();
+  }
+  static constexpr double gain_from_zero(size_t k) {
+    return (C(2) - T::zero(k)).abs();
+  }
+  static constexpr double pole_gain_prod(size_t i = 0) {
+    return i == T::poles ? 1.0 : gain_from_pole(i) * pole_gain_prod(i + 1);
+  }
+  static constexpr double zero_gain_prod(size_t i = 0) {
+    return i == T::zeroes ? 1.0 : gain_from_zero(i) * zero_gain_prod(i + 1);
+  }
+  static constexpr double gain() {
+    return T::gain() * pole_gain_prod() / zero_gain_prod();
+  }
 };
 
 template<class T>
@@ -75,6 +128,7 @@ struct Bilinear {
   // currently, order must be even!
   static const size_t order = T::poles > T::zeroes ? T::poles : T::zeroes;
   static const size_t biquads = (order + 1) / 2;
+  static constexpr double gain = T::gain();
   static constexpr double b0(size_t k) { return 1.0; }
   static constexpr double b1(size_t k) { return -(T::zero(k * 2) + T::zero(k * 2 + 1)).real(); }
   static constexpr double b2(size_t k) { return  (T::zero(k * 2) * T::zero(k * 2 + 1)).real(); }
@@ -85,20 +139,21 @@ struct Bilinear {
 
 
 #if 1
-template<class T, size_t k>
+#define FILTER_TYPE float
+
+  template<class T, size_t k>
 struct BQ {
-  static constexpr float b0 = T::b0(k);
-  static constexpr float b1 = T::b1(k);
-  static constexpr float b2 = T::b2(k);
-  static constexpr float a0 = T::a0(k);
-  static constexpr float a1 = T::a1(k);
-  static constexpr float a2 = T::a2(k);
+  static constexpr FILTER_TYPE b0 = T::b0(k);
+  static constexpr FILTER_TYPE b1 = T::b1(k);
+  static constexpr FILTER_TYPE b2 = T::b2(k);
+  static constexpr FILTER_TYPE a0 = T::a0(k);
+  static constexpr FILTER_TYPE a1 = T::a1(k);
+  static constexpr FILTER_TYPE a2 = T::a2(k);
 };
 
 #define BIQUAD(X, XN, XN1, XN2, YN1, YN2) \
   BQ<T,X>::b0 * XN + BQ<T,X>::b1 * XN1 + BQ<T,X>::b2 * XN2 - BQ<T,X>::a1 * YN1 - BQ<T,X>::a2 * YN2
 
-#define FILTER_TYPE float
 #define FILTER_FROM_FLOAT(X) X
 #define FILTER_TO_FLOAT(X) X
 
@@ -162,8 +217,8 @@ struct BQ {
 
 template<class T>
 class Biquad {
-  FILTER_TYPE data_[T::biquads + 1][2];
  public:
+  FILTER_TYPE data_[T::biquads + 1][2];
   Biquad() { clear(); }
   void clear() {
     for (size_t i = 0; i <= T::biquads; i++) {
@@ -246,7 +301,12 @@ class Biquad {
     inout[3] = FILTER_TO_FLOAT(D8x5);
 #else
 #error UNSUPPORTED FILTER ORDER
-#endif    
+#endif
+    FILTER_TYPE gain_inv = 1.0 / T::gain;
+    inout[0] *= gain_inv;
+    inout[1] *= gain_inv;
+    inout[2] *= gain_inv;
+    inout[3] *= gain_inv;
   }
 };
 

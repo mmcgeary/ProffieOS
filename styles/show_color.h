@@ -8,6 +8,7 @@ public:
   void run(BladeBase *blade) {}
   SimpleColor getColor(int led) { return color_; }
   static void SetColor(Color16 color) { color_ = color; }
+  static Color16& getColor() { return color_; }
 private:
   static Color16 color_;
 };
@@ -71,7 +72,7 @@ public:
   void Stop(int blade) {
 #define SHOW_COLOR_STYLE_STOP2(N)			\
     case N:						\
-      current_config->blade##N->UnSetStyle();		\
+      delete current_config->blade##N->UnSetStyle();	\
       current_config->blade##N->SetStyle(style_);	\
       break;
 

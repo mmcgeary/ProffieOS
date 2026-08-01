@@ -6,8 +6,8 @@
 // depends on the blade.
 class Color8 {
   public:
-  Color8() : r(0), g(0), b(0) {}
-  Color8(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
+  constexpr Color8() : r(0), g(0), b(0) {}
+  constexpr Color8(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
   // x = 0..256
   Color8 mix(const Color8& other, int x) const {
     // Wonder if there is an instruction for this?
@@ -39,6 +39,10 @@ class Color8 {
 
   enum Byteorder {
     NONE = 0,
+
+    R = 0x1,
+    G = 0x2,
+    B = 0x3,
 
     // RGB colors
     BGR=0x321,
@@ -80,11 +84,17 @@ class Color8 {
   };
 
   static int num_bytes(int byteorder) {
-    return byteorder <= 0xfff ? 3 : 4;
+    return
+      byteorder <= 0xf ? 1 :
+      byteorder <= 0xfff ? 3 :
+      4;
   }
 
   static constexpr int inline_num_bytes(int byteorder) __attribute__((always_inline)) {
-    return byteorder <= 0xfff ? 3 : 4;
+    return
+      byteorder <= 0xf ? 1 :
+      byteorder <= 0xfff ? 3 :
+      4;
   }
 
 
@@ -172,13 +182,23 @@ public:
   HSL rotate(float angle) {
     return HSL(fract(H + angle), S, L);
   }
+  void printTo(Print& p) {
+    p.print("HSL:");
+    p.print(H);
+    p.write(',');
+    p.print(S);
+    p.write(',');
+    p.print(L);
+  }
   float H; // 0 - 1.0
   float S; // 0 - 1.0
   float L; // 0 - 1.0
 };
 
 
-static int8_t color16_dither_matrix[4][4] = {
+
+static const
+int8_t color16_dither_matrix[4][4] = {
   { -127, 111,  -76,  94 },
   {    9, -59,   60,  -8 },
   {  -93,  77, -110, 127 },
@@ -188,7 +208,7 @@ static int8_t color16_dither_matrix[4][4] = {
 class Color16 {
   public:
   constexpr Color16() : r(0), g(0), b(0) {}
-  Color16(const Color8& c) : r(c.r * 0x101), g(c.g * 0x101), b(c.b * 0x101) {}
+  constexpr Color16(const Color8& c) : r(c.r * 0x101), g(c.g * 0x101), b(c.b * 0x101) {}
   constexpr Color16(uint16_t r_, uint16_t g_, uint16_t b_) : r(r_), g(g_), b(b_) {}
   // x = 0..256
   Color16 mix(const Color16& other, int x) const {
@@ -305,29 +325,29 @@ public:
     int MAX = std::max(r, std::max(g, b));
     int MIN = std::min(r, std::min(g, b));
     int C = MAX - MIN;
-    int H;
+    float H;
     // Note 16384 = 60 degrees.
     if (C == 0) {
       H = 0;
     } else if (r == MAX) {
       // r is biggest
-      H = 16384 * (g - b) / C;
+      H = (g - b) / (float)C;
     } else if (g == MAX) {
       // g is biggest
-      H = 16384 * (b - r) / C + 16384 * 2;
+      H = (b - r) / (float)C + 2.0f;
     } else {
       // b is biggest
-      H = 16384 * (r - g) / C + 16384 * 4;
+      H = (r - g) / (float)C + 4.0f;
     }
     int L = MIN + MAX;
     float S = (MAX*2 - L) / (float)std::min<int>(L, 131072 - L);
-    return HSL(H / 98304.0, S, L / 131070.0);
+    return HSL(fract(H / 6.0f), S, L / 131070.0);
   }
 
   explicit Color16(HSL hsl) {
-    float C = (1.0 - fabs(2 * hsl.L - 1.0)) * hsl.S;
+    float C = (1.0 - fabsf(2 * hsl.L - 1.0f)) * hsl.S;
     float h = hsl.H * 6;
-    float X = C * (1 - fabs(fmod(h, 2.0) - 1));
+    float X = C * (1 - fabsf(fmodf(h, 2.0f) - 1));
     float R=0.0, G=0.0, B=0.0;
     switch ((int)floor(h)) {
       case 0: R=C; G=X; break;
@@ -356,15 +376,18 @@ struct SimpleColor {
   bool getOverdrive() const { return false; }
 };
 
+struct RGBA_nod;
+
 struct OverDriveColor {
   OverDriveColor() {}
   OverDriveColor(const Color16 &c_, bool o) : c(c_), overdrive(o) {}
   OverDriveColor(const SimpleColor &c_) : c(c_.c), overdrive(false) {}
+  OverDriveColor(const RGBA_nod &rgba);
   Color16 c;
   bool overdrive;
   
   void printTo(Print& p) {
-    if (overdrive) p.write('!');
+    p.write(overdrive ? '!' : '#');
     c.printTo(p);
   }
   bool getOverdrive() const { return overdrive; }
@@ -433,7 +456,7 @@ struct RGBA_um {
   bool overdrive;
 
   void printTo(Print& p) {
-    if (overdrive) p.write('!');
+    p.write(overdrive ? '!' : '#');
     c.printTo(p);
     p.write(',');
     p.print(alpha);
@@ -456,6 +479,8 @@ struct RGBA_nod {
   bool getOverdrive() const { return false; }
 };
 
+inline OverDriveColor::OverDriveColor(const RGBA_nod &rgba) : c(rgba.c * rgba.alpha >> 15), overdrive(false) {}
+
 // Premultiplied ALPHA
 struct RGBA {
   constexpr RGBA(Color16 c_, bool od, uint16_t a) : c(c_), alpha(a), overdrive(od) {}
@@ -468,7 +493,7 @@ struct RGBA {
   uint16_t alpha;
   bool overdrive;
   void printTo(Print& p) {
-    if (overdrive) p.write('!');
+    p.write(overdrive ? '!' : '#');
     c.printTo(p);
     p.write('*');
     p.print(alpha);

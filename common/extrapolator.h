@@ -16,6 +16,9 @@ class IncrementalLine {
   float t_square_sum_;
   T sum_;
   T dot_sum_;
+#ifdef FUSOR_VARIANCE
+  T square_sum_;
+#endif
   volatile bool needs_update_ = true;
  public:
   void Start(uint32_t t) {
@@ -25,6 +28,9 @@ class IncrementalLine {
     t_square_sum_ = 0.0;
     sum_ = T(0.0f);
     dot_sum_ = T(0.0f);
+#ifdef FUSOR_VARIANCE
+    square_sum_ = T(0.0f);
+#endif
   }
   void Add(const ExtrapolatorData<T>& data) {
     needs_update_ = true;
@@ -34,6 +40,9 @@ class IncrementalLine {
     t_square_sum_ += t * t;
     sum_ += data.v;
     dot_sum_ += data.v * t;
+#ifdef FUSOR_VARIANCE
+    square_sum_ += data.v * data.v;
+#endif
   }
   void Sub(const ExtrapolatorData<T>& data) {
     needs_update_ = true;
@@ -43,6 +52,9 @@ class IncrementalLine {
     t_square_sum_ -= t * t;
     sum_ -= data.v;
     dot_sum_ -= data.v * t;
+#ifdef FUSOR_VARIANCE
+    square_sum_ -= data.v * data.v;
+#endif
   }
 
  private:
@@ -81,6 +93,40 @@ class IncrementalLine {
     return slope_;
   }
   int samples() const { return samples_; }
+
+  void dump() {
+    STDOUT
+      << " START=" << start_
+      << " samples=" << samples_
+      << " S(t^2)=" << t_square_sum_
+      << " sum=" << sum_
+      << " S(.)=" << dot_sum_
+      << "\n";
+    STDOUT
+      << " start_copy=" << start_copy_
+      << " avg=" << avg_
+      << " slope=" << slope_
+      << " avg_t=" << avg_t_
+      << "\n";
+#ifdef FUSOR_VARIANCE
+    if (samples_ > 1) {
+      T variance = (square_sum_ - sum_ * sum_ / samples_) / (samples_ -1);
+      STDOUT << " VARIANCE=";
+      STDOUT.print(variance.x, 8);
+      STDOUT << ", ";
+      STDOUT.print(variance.y, 8);
+      STDOUT << ", ";
+      STDOUT.print(variance.z, 8);
+      STDOUT << " STDDEV=";
+      STDOUT.print(sqrtf(variance.x), 8);
+      STDOUT << ", ";
+      STDOUT.print(sqrtf(variance.y), 8);
+      STDOUT << ", ";
+      STDOUT.print(sqrtf(variance.z), 8);
+      STDOUT << "\n";
+    }
+#endif
+  }
 };
 
 template<class T, int SIZE = 10>
@@ -99,7 +145,7 @@ public:
     data_[entry_].t = now;
     line_.Add(data_[entry_]);
 
-    if ((values_++ & 1024) == 1023) {
+    if ((values_++ & 1023) == 1023) {
       // recalculate to avoid building errors
       line_.Start(data_[(entry_ + 1) % SIZE].t);
       for (size_t i = 0; i < SIZE; i++) {
@@ -121,9 +167,11 @@ public:
   uint32_t last_time() { return data_[entry_].t; }
 
   void dump() {
+    line_.dump();
     for (size_t i = 0; i < SIZE; i++) {
       STDOUT << " " << data_[i].t <<" " << " " << data_[i].v << "\n";
     }
+    STDOUT << " ready=" << ready() << "\n";
   }
 
   ExtrapolatorData<T> data_[SIZE];
